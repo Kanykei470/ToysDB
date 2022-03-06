@@ -4,11 +4,10 @@
     ViewData["Title"] = "Delete";
 }
 
-<h1>Delete</h1>
+<h1>Удалить</h1>
 
-<h3>Are you sure you want to delete this?</h3>
 <div>
-    <h4>ГотоваяПродукция</h4>
+    <h4>Готовая Продукция</h4>
     <hr />
     <dl class="row">
         <dt class = "col-sm-2">
@@ -30,7 +29,7 @@
             @Html.DisplayFor(model => model.Количество)
         </dd>
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ЕдиницаИзмеренияNavigation)
+            @Html.DisplayNameFor(model => model.ЕдиницаИзмерения)
         </dt>
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.ЕдиницаИзмеренияNavigation.Id)

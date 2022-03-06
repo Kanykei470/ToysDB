@@ -13,6 +13,7 @@ namespace ToysDB.Controllers
     {
         private readonly ToysContext _context;
 
+       
         public ЗакупкаСырьяController(ToysContext context)
         {
             _context = context;
@@ -58,13 +59,27 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+
         public async Task<IActionResult> Create([Bind("Id,Сырьё,Количество,Сумма,Дата,Сотрудник")] ЗакупкаСырья закупкаСырья)
         {
+            var buget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
+            var raw = _context.Сырьёs.Where(u => u.Id == закупкаСырья.Сырьё).FirstOrDefault();
             if (ModelState.IsValid)
             {
-                _context.Add(закупкаСырья);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (buget.Сумма < закупкаСырья.Сумма)
+                {
+                    return NotFound("Ты чё мыш!");
+                }
+                else 
+                {
+                    buget.Сумма = buget.Сумма - закупкаСырья.Сумма;
+                    raw.Количество = (short?)(raw.Количество + закупкаСырья.Количество);
+                    raw.Сумма = raw.Сумма + закупкаСырья.Сумма;
+                    _context.Add(закупкаСырья);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+               
             }
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", закупкаСырья.Сотрудник);
             ViewData["Сырьё"] = new SelectList(_context.Сырьёs, "Id", "Наименование", закупкаСырья.Сырьё);

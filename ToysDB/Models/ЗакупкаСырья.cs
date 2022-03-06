@@ -9,7 +9,7 @@ namespace ToysDB.Models
     {
         public byte Id { get; set; }
         public byte? Сырьё { get; set; }
-        public float? Количество { get; set; }
+        public short? Количество { get; set; }
         public decimal? Сумма { get; set; }
         public DateTime? Дата { get; set; }
         public byte? Сотрудник { get; set; }
