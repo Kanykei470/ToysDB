@@ -1,10 +1,49 @@
 ﻿header {
-    background: rgba(0,255,255);
-    letter-spacing: 1px;
+    background-color: #FFE162;
 }
+
+
 
 body {
     background: #1A1A40;
 }
 
+h1 {
+    color: #FFE162;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; /* Семейство шрифтов */
+    font-weight: lighter; /* Нормальное начертание текста  */
+}
+
+h4 {
+    color: #00FFDd;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; /* Семейство шрифтов */
+    font-weight: normal; /* Нормальное начертание текста  */
+}
+h3 {
+    color: #00FFDd;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; /* Семейство шрифтов */
+    font-weight: normal; /* Нормальное начертание текста  */
+}
+
+dd {
+    color: #ffff;
+ 
+    
+}
+dt {
+    color: #ffff;
+    
+}
+
+label {
+    color: #ffff;
+}
+li {
+    color: #FF4C29;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; /* Семейство шрифтов */
+    font-weight: 100; /* Нормальное начертание текста  */
+    display: list-item;
+    font-size: small;
+    line-height: normal;
+}
 

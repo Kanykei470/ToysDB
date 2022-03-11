@@ -153,9 +153,6 @@ C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Гот�
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\ГотоваяПродукция\Details.cshtml.g.cs
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\ГотоваяПродукция\Edit.cshtml.g.cs
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\ГотоваяПродукция\Index.cshtml.g.cs
-C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Бюджет\Create.cshtml.g.cs
-C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Бюджет\Delete.cshtml.g.cs
-C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Бюджет\Details.cshtml.g.cs
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Бюджет\Edit.cshtml.g.cs
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Бюджет\Index.cshtml.g.cs
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\ЕдиницыИзмерения\Create.cshtml.g.cs

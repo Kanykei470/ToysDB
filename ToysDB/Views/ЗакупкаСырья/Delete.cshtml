@@ -30,22 +30,22 @@
             @Html.DisplayFor(model => model.Дата)
         </dd>
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.СотрудникNavigation)
+            @Html.DisplayNameFor(model => model.Сотрудник)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.СотрудникNavigation.Id)
+            @Html.DisplayFor(model => model.СотрудникNavigation.Фио)
         </dd class>
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.СырьёNavigation)
+            @Html.DisplayNameFor(model => model.Сырьё)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.СырьёNavigation.Id)
+            @Html.DisplayFor(model => model.СырьёNavigation.Наименование)
         </dd class>
     </dl>
     
     <form asp-action="Delete">
         <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-action="Index">Back to List</a>
+        <input type="submit" value="Удалить" class="btn btn-danger" /> |
+         <a asp-action="Index" class = "btn btn-outline-primary" >Назад</a>
     </form>
 </div>

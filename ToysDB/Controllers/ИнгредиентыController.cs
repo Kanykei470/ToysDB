@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
+using ToysDB.ViewModels;
 
 namespace ToysDB.Controllers
 {
@@ -19,10 +20,33 @@ namespace ToysDB.Controllers
         }
 
         // GET: Ингредиенты
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? finprod, string name)
         {
-            var toysContext = _context.Ингредиентыs.Include(и => и.ПродукцияNavigation).Include(и => и.СырьеNavigation);
-            return View(await toysContext.ToListAsync());
+
+            IQueryable<Ингредиенты> Ингредиенты = _context.Ингредиентыs.Include(p => p.ПродукцияNavigation).Include(u => u.СырьеNavigation);
+            if (finprod != null && finprod != 0)
+            {
+                Ингредиенты = Ингредиенты.Where(p => p.ПродукцияNavigation.Id == finprod);
+            }
+
+            List<ГотоваяПродукция> ГотоваяПродукция = await _context.ГотоваяПродукцияs.ToListAsync();
+
+            ГотоваяПродукция.Insert(0, new ГотоваяПродукция { Наименование = "Все", Id = 0 });
+
+            ИнгViewModel ingridientsViewModel = new ИнгViewModel
+            {
+                Ингредиенты = Ингредиенты,
+                ГотовыйПродукт = new SelectList(ГотоваяПродукция, "Id", "Наименование"),
+                Наименование = name,
+                ВыбранныйПродукт = finprod
+            };
+            if (finprod.HasValue)
+            {
+                var itemToSelect = ingridientsViewModel.ГотовыйПродукт.FirstOrDefault(x => x.Value == finprod.Value.ToString());
+                itemToSelect.Selected = true;
+            }
+
+            return View(ingridientsViewModel);
         }
 
         // GET: Ингредиенты/Details/5

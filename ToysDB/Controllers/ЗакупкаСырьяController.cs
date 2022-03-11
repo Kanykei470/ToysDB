@@ -68,7 +68,8 @@ namespace ToysDB.Controllers
             {
                 if (buget.Сумма < закупкаСырья.Сумма)
                 {
-                    return NotFound("Ты чё мыш!");
+                    ModelState.AddModelError("Сумма", "У вас недостаточно бюджета!");
+                    
                 }
                 else 
                 {
@@ -144,6 +145,7 @@ namespace ToysDB.Controllers
         // GET: ЗакупкаСырья/Delete/5
         public async Task<IActionResult> Delete(byte? id)
         {
+            
             if (id == null)
             {
                 return NotFound();
@@ -153,6 +155,9 @@ namespace ToysDB.Controllers
                 .Include(з => з.СотрудникNavigation)
                 .Include(з => з.СырьёNavigation)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
+           
+
             if (закупкаСырья == null)
             {
                 return NotFound();
@@ -167,7 +172,16 @@ namespace ToysDB.Controllers
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
             var закупкаСырья = await _context.ЗакупкаСырьяs.FindAsync(id);
+
+            var buget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
+            var raw = _context.Сырьёs.Where(u => u.Id == закупкаСырья.Сырьё).FirstOrDefault();
+
+           
+            buget.Сумма = buget.Сумма - закупкаСырья.Сумма;
+            raw.Количество = (short?)(raw.Количество - закупкаСырья.Количество);
+            
             _context.ЗакупкаСырьяs.Remove(закупкаСырья);
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
