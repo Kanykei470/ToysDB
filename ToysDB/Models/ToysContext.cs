@@ -67,7 +67,16 @@ namespace ToysDB.Models
                     .ValueGeneratedOnAdd()
                     .HasColumnName("ID");
 
-                entity.Property(e => e.Сумма).HasColumnType("money");
+                entity.Property(e => e.Сумма)
+                .HasColumnType("money")
+                .HasColumnName("Сумма");
+                entity.Property(e => e.Процент)
+                .HasColumnType("tinyint")
+                .HasColumnName("Процент");
+                entity.Property(e => e.Бонус)
+                .HasColumnType("money")
+                .HasColumnName("Бонус");
+
             });
 
             modelBuilder.Entity<ГотоваяПродукция>(entity =>

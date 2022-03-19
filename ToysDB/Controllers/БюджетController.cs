@@ -21,6 +21,7 @@ namespace ToysDB.Controllers
         // GET: Бюджет
         public async Task<IActionResult> Index()
         {
+           
             return View(await _context.Бюджетs.ToListAsync());
         }
 
@@ -53,7 +54,7 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Сумма")] Бюджет бюджет)
+        public async Task<IActionResult> Create([Bind("Id,Сумма,Процент,Бонус")] Бюджет бюджет)
         {
             if (ModelState.IsValid)
             {
@@ -85,7 +86,7 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(byte id, [Bind("Id,Сумма")] Бюджет бюджет)
+        public async Task<IActionResult> Edit(byte id, [Bind("Id,Сумма,Процент,Бонус")] Бюджет бюджет)
         {
             if (id != бюджет.Id)
             {

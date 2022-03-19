@@ -22,7 +22,7 @@ namespace ToysDB.Controllers
         // GET: ПродажаПродукции
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.ПродажаПродукцииs.Include(п => п.ПродукцияNavigation).Include(п => п.СотрудникNavigation);
+            var toysContext = _context.ПродажаПродукцииs.Include(п => п.СотрудникNavigation).Include(п => п.ПродукцияNavigation);
             return View(await toysContext.ToListAsync());
         }
 
@@ -62,15 +62,43 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Продукция,Количество,Сумма,Дата,Сотрудник")] ПродажаПродукции продажаПродукции)
         {
+            var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
+            var prod = _context.ГотоваяПродукцияs.Where(u => u.Id == продажаПродукции.Продукция).FirstOrDefault();
+            var sum = prod.Сумма / Convert.ToDecimal(prod.Количество) * Convert.ToDecimal(продажаПродукции.Количество);
+
+            var sumcheck = sum + sum / 100 * budget.Процент;
+            if (продажаПродукции.Дата == null)
+            {
+                продажаПродукции.Дата = DateTime.Now;
+            }
             if (ModelState.IsValid)
             {
-                _context.Add(продажаПродукции);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (prod.Количество < продажаПродукции.Количество || продажаПродукции.Количество == null)
+                {
+                    ModelState.AddModelError("Количество", "Недостаточно готовой продукции!");
+                }
+                else if (sumcheck > продажаПродукции.Сумма || продажаПродукции.Сумма == null)
+                {
+
+                    ModelState.AddModelError("Сумма", "Нельзя задать цену ниже себестоимости\r\nминимальная сумма: " + sumcheck);
+
+                }
+                else
+                {
+                    budget.Сумма += продажаПродукции.Сумма;
+                    prod.Сумма -= sum;
+                    float количество = (float)продажаПродукции.Количество;
+                    prod.Количество -= (short)количество;
+
+                    _context.Add(продажаПродукции);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
             }
             ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", продажаПродукции.Продукция);
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", продажаПродукции.Сотрудник);
             return View(продажаПродукции);
+
         }
 
         // GET: ПродажаПродукции/Edit/5

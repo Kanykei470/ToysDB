@@ -103,6 +103,7 @@ namespace ToysDB.Controllers
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", закупкаСырья.Сотрудник);
             ViewData["Сырьё"] = new SelectList(_context.Сырьёs, "Id", "Наименование", закупкаСырья.Сырьё);
             return View(закупкаСырья);
+
         }
 
         // POST: ЗакупкаСырья/Edit/5
@@ -110,37 +111,59 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(byte id, [Bind("Id,Сырьё,Количество,Сумма,Дата,Сотрудник")] ЗакупкаСырья закупкаСырья)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Сырьё,Количество,Сумма,Дата,Сотрудник")] ЗакупкаСырья закупкаСырья)
         {
             if (id != закупкаСырья.Id)
             {
                 return NotFound();
             }
 
+            var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
+            var raw = _context.Сырьёs.Where(u => u.Id == закупкаСырья.Сырьё).FirstOrDefault();
+            var deleted = _context.ЗакупкаСырьяs.Where(u => u.Id == закупкаСырья.Id).FirstOrDefault();
+
             if (ModelState.IsValid)
             {
-                try
+                if (budget.Сумма + deleted.Сумма < закупкаСырья.Сумма)
                 {
-                    _context.Update(закупкаСырья);
-                    await _context.SaveChangesAsync();
+
+                    ModelState.AddModelError("Сумма", "У вас недостаточно бюджета!");
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!ЗакупкаСырьяExists(закупкаСырья.Id))
+                    budget.Сумма += deleted.Сумма;
+                    budget.Сумма -= закупкаСырья.Сумма;
+                    raw.Количество -= deleted.Количество;
+                    raw.Количество += закупкаСырья.Количество;
+                    raw.Сумма -= deleted.Сумма;
+                    raw.Сумма += закупкаСырья.Сумма;
+
+                    try
                     {
-                        return NotFound();
+                        _context.Remove(deleted);
+                        _context.Update(закупкаСырья);
+                        await _context.SaveChangesAsync();
+
                     }
-                    else
+                    catch (DbUpdateConcurrencyException)
                     {
-                        throw;
+                        if (!ЗакупкаСырьяExists(закупкаСырья.Id))
+                        {
+                            return NotFound();
+                        }
+                        else
+                        {
+                            throw;
+                        }
                     }
+                    return RedirectToAction(nameof(Index));
                 }
-                return RedirectToAction(nameof(Index));
             }
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", закупкаСырья.Сотрудник);
             ViewData["Сырьё"] = new SelectList(_context.Сырьёs, "Id", "Наименование", закупкаСырья.Сырьё);
             return View(закупкаСырья);
         }
+
 
         // GET: ЗакупкаСырья/Delete/5
         public async Task<IActionResult> Delete(byte? id)
@@ -171,17 +194,16 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
+            var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
+
             var закупкаСырья = await _context.ЗакупкаСырьяs.FindAsync(id);
 
-            var buget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
             var raw = _context.Сырьёs.Where(u => u.Id == закупкаСырья.Сырьё).FirstOrDefault();
+            budget.Сумма += закупкаСырья.Сумма;
+            raw.Количество -= закупкаСырья.Количество;
+            raw.Сумма -= закупкаСырья.Сумма;
 
-           
-            buget.Сумма = buget.Сумма - закупкаСырья.Сумма;
-            raw.Количество = (short?)(raw.Количество - закупкаСырья.Количество);
-            
             _context.ЗакупкаСырьяs.Remove(закупкаСырья);
-
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

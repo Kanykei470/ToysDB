@@ -9,5 +9,7 @@ namespace ToysDB.Models
     {
         public byte Id { get; set; }
         public decimal? Сумма { get; set; }
+        public short Процент { get; set; }
+        public decimal? Бонус { get; set; }
     }
 }
