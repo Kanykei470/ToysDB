@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace ToysDB.Controllers
 {
@@ -29,7 +30,7 @@ namespace ToysDB.Controllers
         // GET: ПродажаПродукции/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
-           
+
             if (id == null)
             {
                 return NotFound();
@@ -71,17 +72,9 @@ namespace ToysDB.Controllers
             {
                 продажаПродукции.Дата = DateTime.Now;
             }
-            if (ModelState.IsValid)
-            {
                 if (prod.Количество < продажаПродукции.Количество || продажаПродукции.Количество == null)
                 {
                     ModelState.AddModelError("Количество", "Недостаточно готовой продукции!");
-                }
-                else if (sumcheck > продажаПродукции.Сумма || продажаПродукции.Сумма == null)
-                {
-
-                    ModelState.AddModelError("Сумма", "Нельзя задать цену ниже себестоимости\r\nминимальная сумма: " + sumcheck);
-
                 }
                 else
                 {
@@ -90,11 +83,12 @@ namespace ToysDB.Controllers
                     float количество = (float)продажаПродукции.Количество;
                     prod.Количество -= (short)количество;
 
+                    продажаПродукции.Сумма = sumcheck;
                     _context.Add(продажаПродукции);
                     await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
-            }
+            //}
             ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", продажаПродукции.Продукция);
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", продажаПродукции.Сотрудник);
             return View(продажаПродукции);
@@ -126,36 +120,63 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(byte id, [Bind("Id,Продукция,Количество,Сумма,Дата,Сотрудник")] ПродажаПродукции продажаПродукции)
         {
-            if (id != продажаПродукции.Id)
             {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+                if (id != продажаПродукции.Id)
                 {
-                    _context.Update(продажаПродукции);
-                    await _context.SaveChangesAsync();
+                    return NotFound();
                 }
-                catch (DbUpdateConcurrencyException)
+
+                var deleted = _context.ПродажаПродукцииs.Where(u => u.Id == продажаПродукции.Id).FirstOrDefault();
+
+                var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
+                var prod = _context.ГотоваяПродукцияs.Where(u => u.Id == продажаПродукции.Продукция).FirstOrDefault();
+                decimal sum, sum1;
+
+                if (prod.Количество == 0)
                 {
-                    if (!ПродажаПродукцииExists(продажаПродукции.Id))
+                    sum = ((decimal)(продажаПродукции.Сумма / (100 + budget.Процент) * 100));
+
+                    sum1 = ((decimal)(deleted.Сумма / (100 + budget.Процент) * 100));
+                }
+                else
+                {
+                    sum = ((decimal)(prod.Сумма / prod.Количество * (decimal)продажаПродукции.Количество));
+
+                    sum1 = ((decimal)(prod.Сумма / prod.Количество * (decimal)deleted.Количество));
+                }
+
+                var sumforonedel = sum1 / (decimal)deleted.Количество;  
+                var sumcheck = sum + sum / 100 * budget.Процент;
+
+                    if (продажаПродукции.Количество > deleted.Количество + prod.Количество)
                     {
-                        return NotFound();
+                        ModelState.AddModelError("Количество", "Недостаточно готовой продукции");
                     }
                     else
                     {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", продажаПродукции.Продукция);
-            ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", продажаПродукции.Сотрудник);
-            return View(продажаПродукции);
-        }
+                        budget.Сумма -= deleted.Сумма;
+                        budget.Сумма += продажаПродукции.Сумма;
+                        prod.Количество += (short)deleted.Количество;
+                        prod.Количество -= (short)продажаПродукции.Количество;
+                        prod.Сумма += sum1;
+                        prod.Сумма -= sum;
 
+                        if (prod.Количество != 0 && prod.Сумма == 0)
+                        {
+                            prod.Сумма = prod.Количество * sumforonedel;
+                        }
+                        _context.Remove(deleted);
+                        _context.Update(продажаПродукции);
+                        await _context.SaveChangesAsync();
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                }
+                ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", продажаПродукции.Продукция);
+                ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", продажаПродукции.Сотрудник);
+                return View(продажаПродукции);
+            
+        }
         // GET: ПродажаПродукции/Delete/5
         public async Task<IActionResult> Delete(byte? id)
         {
@@ -181,15 +202,35 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
+
             var продажаПродукции = await _context.ПродажаПродукцииs.FindAsync(id);
+
+
+            var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
+            var prod = _context.ГотоваяПродукцияs.Where(u => u.Id == продажаПродукции.Продукция).FirstOrDefault();
+            decimal sum;
+            if (prod.Количество == 0)
+            {
+                sum = ((decimal)(продажаПродукции.Сумма / (100 + budget.Процент) * 100));
+            }
+            else
+            {
+                sum = ((decimal)(prod.Сумма / prod.Количество * (decimal)продажаПродукции.Количество));
+            }
+            budget.Сумма -= (short)продажаПродукции.Сумма;
+            prod.Количество += (short)продажаПродукции.Количество;
+            prod.Сумма += sum;
+
             _context.ПродажаПродукцииs.Remove(продажаПродукции);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
+
         private bool ПродажаПродукцииExists(byte id)
         {
             return _context.ПродажаПродукцииs.Any(e => e.Id == id);
         }
+
     }
 }

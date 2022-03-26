@@ -1,4 +1,6 @@
 ﻿@model IEnumerable<ToysDB.Models.ПродажаПродукции>
+
+
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <!-- links of Bootstrap 4 JavaScript -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js">
@@ -50,10 +52,10 @@
                 @Html.DisplayFor(modelItem => item.ПродукцияNavigation.Наименование)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Количество)
+                @Html.DisplayFor(modelItem => item. Количество)
             </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Сумма)
+            <td class="sum">
+               @((short)(item.ПродукцияNavigation.Сумма/(short)item.ПродукцияNavigation.Количество* (short)item.Количество))
             </td>
             <td>
                 @Html.Encode(string.Format("{0:dd/MM/yyyy}",item.Дата))
@@ -70,6 +72,8 @@
 }
     </tbody>
 </table>
+
+
 <script>
         $(document).ready(function () {
        
@@ -81,4 +85,4 @@
                 });
             });
         });
-    </script>
+</script>
