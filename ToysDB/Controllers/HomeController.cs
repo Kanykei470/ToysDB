@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AspNetCoreHero.ToastNotification.Abstractions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -13,8 +14,10 @@ namespace ToysDB.Controllers
     {
         private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        private readonly INotyfService _notyf;
+        public HomeController(ILogger<HomeController> logger, INotyfService notyf)
         {
+            _notyf = notyf;
             _logger = logger;
         }
 

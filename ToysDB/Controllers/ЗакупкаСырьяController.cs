@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AspNetCoreHero.ToastNotification.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +13,12 @@ namespace ToysDB.Controllers
     public class ЗакупкаСырьяController : Controller
     {
         private readonly ToysContext _context;
+        private readonly INotyfService _notyf;
 
-       
-        public ЗакупкаСырьяController(ToysContext context)
+        public ЗакупкаСырьяController(ToysContext context, INotyfService notyf)
         {
             _context = context;
+            _notyf = notyf;
         }
 
         // GET: ЗакупкаСырья
@@ -85,6 +87,7 @@ namespace ToysDB.Controllers
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", закупкаСырья.Сотрудник);
             ViewData["Сырьё"] = new SelectList(_context.Сырьёs, "Id", "Наименование", закупкаСырья.Сырьё);
             return View(закупкаСырья);
+            _notyf.Success("Запись успешно создана.");
         }
 
         // GET: ЗакупкаСырья/Edit/5

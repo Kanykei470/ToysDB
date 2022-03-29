@@ -190,3 +190,8 @@ C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Сыр�
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Сырьё\Details.cshtml.g.cs
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Сырьё\Edit.cshtml.g.cs
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Сырьё\Index.cshtml.g.cs
+C:\Users\Kanykei\source\repos\ToysDB\ToysDB\bin\Debug\net5.0\ToysDB.StaticWebAssets.xml
+C:\Users\Kanykei\source\repos\ToysDB\ToysDB\bin\Debug\net5.0\AspNetCoreHero.ToastNotification.Views.dll
+C:\Users\Kanykei\source\repos\ToysDB\ToysDB\bin\Debug\net5.0\AspNetCoreHero.ToastNotification.dll
+C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\ToysDB.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\staticwebassets\ToysDB.StaticWebAssets.xml

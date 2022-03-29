@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
+using AspNetCoreHero.ToastNotification;
 
 namespace ToysDB.Controllers
 {
@@ -60,12 +61,88 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Продукция,Количество,Дата,Сотрудник")] Производство производство)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(производство);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
+            //ProductionOfCG_Labs_PPO3Context db = new ProductionOfCG_Labs_PPO3Context();
+            //List<Ингредиенты> ингредиенты = new List<Ингредиенты>();
+            //List<Сырьё> сырьё = new List<Сырьё>();
+
+            //ингредиенты = ((from col in _context.Ингредиентыs
+            //                where col.Продукция == production. 
+            //                select col).ToList());
+
+            //foreach (var item in ингредиенты)
+            //{
+            //    Сырьё.Add((from ing in _context.Сырьёs
+            //                      where ing.Id == item.Сырье
+            //                      select ing).First());
+            //}
+
+            //bool isNotEnogh = false;
+            //foreach (var rawM in сырьё)
+            //{
+            //    foreach (var ingred in ингредиенты)
+            //    {
+            //        if (rawM.Id == ingred.Сырье)
+            //        {
+            //            if (rawM.Количество < (ingred.Количество * production.Количество))
+            //            {
+            //                isNotEnogh = true;
+            //                break;
+            //            }
+            //        }
+            //    }
+            //}
+
+            //decimal averageSum, needSum, totalSum = 0;
+            //decimal needAmount;
+
+            //if (isNotEnogh)
+            //{
+            //    ModelState.AddModelError("Amount", "Недостаточно материала для производства.");
+            //}
+            //else if (!isNotEnogh)
+            //{
+            //    foreach (var rawM in Сырьё)
+            //    {
+            //        foreach (var ingred in Ингредиенты)
+            //        {
+            //            if (rawM.Id == ingred.RawMaterial)
+            //            {
+            //                averageSum = Convert.ToDecimal(rawM.Sum) / Convert.ToDecimal(rawM.Amount);
+            //                needAmount = Convert.ToDecimal(ingred.Amount) * Convert.ToDecimal(production.Amount);
+            //                needSum = averageSum * Convert.ToDecimal(needAmount);
+
+            //                var productAmountt = db.Сырьё
+            //                    .Where(r => r.Id == ingred.RawMaterial)
+            //                    .FirstOrDefault();
+            //                productAmountt.Amount = Convert.ToDouble(Convert.ToDecimal(productAmountt.Amount) - Convert.ToDecimal(needAmount));
+            //                productAmountt.Sum = (productAmountt.Sum - needSum);
+            //                db.SaveChanges();
+
+            //                totalSum += needSum;
+            //            }
+
+            //        }
+            //    }
+
+            //    var finProducts = db.FinishedProducts
+            //           .Where(r => r.Id == production.Production1)
+            //           .FirstOrDefault();
+            //    finProducts.Amount = (finProducts.Amount + production.Amount);
+            //    finProducts.Sum = finProducts.Sum + totalSum;
+            //    db.SaveChanges();
+
+
+            //    _context.Add(production);
+            //    await _context.SaveChangesAsync();
+            //    return RedirectToAction(nameof(Index));
+            //}
+
+            //if (ModelState.IsValid)
+            //{
+            //    _context.Add(производство);
+            //    await _context.SaveChangesAsync();
+            //    return RedirectToAction(nameof(Index));
+            //}
             ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", производство.Продукция);
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", производство.Сотрудник);
             return View(производство);

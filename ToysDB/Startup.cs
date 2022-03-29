@@ -10,6 +10,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using ToysDB.Models;
 using Microsoft.EntityFrameworkCore;
+using AspNetCoreHero.ToastNotification;
+
 namespace ToysDB
 {
     public class Startup
@@ -24,6 +26,13 @@ namespace ToysDB
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddNotyf(config =>
+            {
+                config.DurationInSeconds = 12;
+                config.IsDismissable = true;
+                config.Position = NotyfPosition.TopCenter;
+
+            });
             string connection = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<ToysContext>(options => options.UseSqlServer(connection));
             services.AddControllersWithViews();
