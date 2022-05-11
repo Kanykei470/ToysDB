@@ -28,6 +28,7 @@ namespace ToysDB.Models
         public virtual DbSet<Производство> Производствоs { get; set; }
         public virtual DbSet<Сотрудники> Сотрудникиs { get; set; }
         public virtual DbSet<Сырьё> Сырьёs { get; set; }
+        public virtual DbSet<Зарплата> Зарплатаs { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -264,6 +265,38 @@ namespace ToysDB.Models
                     .HasForeignKey(d => d.ЕдиницаИзмерения)
                     .HasConstraintName("FK_Сырьё_Единицы измерения");
             });
+
+            modelBuilder.Entity<Зарплата>(entity =>
+            {
+                entity.ToTable("Зарплата");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.Сотрудники).HasColumnName("Сотрудники");
+
+                entity.Property(e => e.Бонус).HasColumnType("money");
+
+                entity.Property(e => e.Закуп).HasColumnName("Закуп");
+
+                entity.Property(e => e.Продажа).HasColumnName("Продажа");
+
+                entity.Property(e => e.Производство).HasColumnName("Производство");
+
+                entity.Property(e => e.ОбщаяСуммаКВыдаче)
+                    .HasColumnType("money")
+                    .HasColumnName("ОбщаяСуммаКВыдаче");
+
+                entity.Property(e => e.Всего).HasColumnName("Всего");
+
+                entity.Property(e => e.Оклад).HasColumnType("money");
+
+                entity.HasOne(d => d.СотрудникиNavigation)
+                    .WithMany(p => p.Зарплатаs)
+                    .HasForeignKey(d => d.Сотрудники)
+                    .HasConstraintName("FK_Зарплата_Сотрудники");
+            });
+
+
 
             OnModelCreatingPartial(modelBuilder);
         }

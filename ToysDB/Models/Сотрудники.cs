@@ -14,7 +14,7 @@ namespace ToysDB.Models
             Производствоs = new HashSet<Производство>();
         }
 
-        public byte Id { get; set; }
+        public int Id { get; set; }
         public string Фио { get; set; }
         public byte? Должность { get; set; }
         public decimal? Оклад { get; set; }
@@ -25,5 +25,6 @@ namespace ToysDB.Models
         public virtual ICollection<ЗакупкаСырья> ЗакупкаСырьяs { get; set; }
         public virtual ICollection<ПродажаПродукции> ПродажаПродукцииs { get; set; }
         public virtual ICollection<Производство> Производствоs { get; set; }
+        public virtual ICollection <Зарплата> Зарплатаs { get; set; }
     }
 }

@@ -90,7 +90,7 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(byte id, [Bind("Id,Фио,Должность,Оклад,Адрес,Телефон")] Сотрудники сотрудники)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Фио,Должность,Оклад,Адрес,Телефон")] Сотрудники сотрудники)
         {
             if (id != сотрудники.Id)
             {
@@ -106,7 +106,7 @@ namespace ToysDB.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!СотрудникиExists(сотрудники.Id))
+                    if (!СотрудникиExists((byte)сотрудники.Id))
                     {
                         return NotFound();
                     }

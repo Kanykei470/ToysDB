@@ -10,8 +10,8 @@ namespace ToysDB.Models
         public string Id { get; set; }
         public byte? Продукция { get; set; }
         public short? Количество { get; set; }
-        public DateTime? Дата { get; set; }
-        public byte? Сотрудник { get; set; }
+        public DateTime Дата { get; set; }
+        public int Сотрудник { get; set; }
 
         public virtual ГотоваяПродукция ПродукцияNavigation { get; set; }
         public virtual Сотрудники СотрудникNavigation { get; set; }

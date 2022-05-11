@@ -21,9 +21,10 @@ namespace ToysDB.Controllers
         // GET: Бюджет
         public async Task<IActionResult> Index()
         {
-           
+
             return View(await _context.Бюджетs.ToListAsync());
         }
+
 
         // GET: Бюджет/Details/5
         public async Task<IActionResult> Details(byte? id)

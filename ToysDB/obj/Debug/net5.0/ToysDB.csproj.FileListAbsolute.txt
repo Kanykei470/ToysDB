@@ -195,3 +195,4 @@ C:\Users\Kanykei\source\repos\ToysDB\ToysDB\bin\Debug\net5.0\AspNetCoreHero.Toas
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\bin\Debug\net5.0\AspNetCoreHero.ToastNotification.dll
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\ToysDB.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\staticwebassets\ToysDB.StaticWebAssets.xml
+C:\Users\Kanykei\source\repos\ToysDB\ToysDB\obj\Debug\net5.0\Razor\Views\Зарплата\Index.cshtml.g.cs

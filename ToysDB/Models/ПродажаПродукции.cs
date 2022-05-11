@@ -11,8 +11,8 @@ namespace ToysDB.Models
         public byte? Продукция { get; set; }
         public float? Количество { get; set; }
         public decimal? Сумма { get; set; }
-        public DateTime? Дата { get; set; }
-        public byte? Сотрудник { get; set; }
+        public DateTime Дата { get; set; }
+        public int Сотрудник { get; set; }
 
         public virtual ГотоваяПродукция ПродукцияNavigation { get; set; }
         public virtual Сотрудники СотрудникNavigation { get; set; }

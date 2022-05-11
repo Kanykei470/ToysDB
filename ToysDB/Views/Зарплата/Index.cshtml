@@ -1,0 +1,119 @@
+﻿@using (Html.BeginForm())
+{
+    <p>
+
+        @Html.DropDownList("yearString", ViewBag.years as SelectList)
+        @Html.DropDownList("monthString", ViewBag.months as SelectList)
+
+        <input type="submit" value="Ок" class="btn btn-outline-light" />
+        <a asp-action="Index" class="btn btn-outline-light">Все записи</a>
+        <input type="submit" asp-action="paySalary" class="btn btn-outline-light" value="Выдать з/п" />
+
+
+    </p>
+}
+@model IEnumerable<ToysDB.Models.Зарплата>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Зарплата</h1>
+
+@using (Html.BeginForm())
+{
+    <p>
+
+        @Html.DropDownList("yearString", ViewBag.years as SelectList)
+        @Html.DropDownList("monthString", ViewBag.months as SelectList)
+
+        <input type="submit" value="Ок" class="btn btn-outline-light" />
+        <a asp-action="Index" class="btn btn-outline-light">Все записи</a>
+        <input type="submit" asp-action="paySalary" class="btn btn-outline-light" value="Выдать з/п" />
+
+
+    </p>
+}
+
+
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Год)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Месяц)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Сотрудники)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Закуп)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Продажа)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Производство)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Всего)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Оклад)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Бонус)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ОбщаяСуммаКВыдаче)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Статус)
+            </th>
+
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Год)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Месяц)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.СотрудникиNavigation.Фио)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Закуп)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Продажа)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Производство)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Всего)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Оклад)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Бонус)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ОбщаяСуммаКВыдаче)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Статус)
+                </td>
+            </tr>
+        }
+    </tbody>

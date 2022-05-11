@@ -169,31 +169,102 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(string id, [Bind("Id,Продукция,Количество,Дата,Сотрудник")] Производство производство)
         {
-            if (id != производство.Id)
+            var deleted = _context.Производствоs.Where(a => a.Id == производство.Id).FirstOrDefault();
+
+            List<Ингредиенты> ingredients = new List<Ингредиенты>();
+            List<Сырьё> rawMaterials = new List<Сырьё>();
+
+            ingredients = ((from col in _context.Ингредиентыs
+                            where col.Продукция == deleted.Продукция
+                            select col).ToList());
+
+            foreach (var item in ingredients)
             {
-                return NotFound();
+                rawMaterials.Add((from ing in _context.Сырьёs
+                                  where ing.Id == item.Сырье
+                                  select ing).First());
             }
 
-            if (ModelState.IsValid)
+            decimal averageSum, needSum, totalSum = 0;
+            decimal needAmount;
+
+            foreach (var rawM in rawMaterials)
             {
-                try
+                foreach (var ingred in ingredients)
                 {
-                    _context.Update(производство);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ПроизводствоExists(производство.Id))
+                    if (rawM.Id == ingred.Сырье)
                     {
-                        return NotFound();
+                        averageSum = Convert.ToDecimal(rawM.Сумма) / Convert.ToDecimal(rawM.Количество);
+                        needAmount = Convert.ToDecimal(ingred.Количество) * Convert.ToDecimal(deleted.Количество);
+                        needSum = averageSum * Convert.ToDecimal(needAmount);
+
+                        var productAmountt = _context.Сырьёs
+                            .Where(r => r.Id == ingred.Сырье)
+                            .FirstOrDefault();
+                        productAmountt.Количество += (short)needAmount;
+                        productAmountt.Сумма += needSum;
+
+                        totalSum += needSum;
                     }
-                    else
-                    {
-                        throw;
-                    }
+
                 }
-                return RedirectToAction(nameof(Index));
             }
+
+            List<Ингредиенты> ingredients1 = new List<Ингредиенты>();
+            List<Сырьё> rawMaterials1 = new List<Сырьё>();
+
+            ingredients1 = ((from col in _context.Ингредиентыs
+                             where col.Продукция == производство.Продукция
+                             select col).ToList());
+
+            foreach (var item in ingredients1)
+            {
+                rawMaterials1.Add((from ing in _context.Сырьёs
+                                   where ing.Id == item.Сырье
+                                   select ing).First());
+            }
+
+            decimal averageSum1, needSum1, totalSum1 = 0;
+            decimal needAmount1;
+
+            foreach (var rawM in rawMaterials1)
+            {
+                foreach (var ingred in ingredients1)
+                {
+                    if (rawM.Id == ingred.Сырье)
+                    {
+                        averageSum1 = Convert.ToDecimal(rawM.Сумма) / Convert.ToDecimal(rawM.Количество);
+                        needAmount1 = Convert.ToDecimal(ingred.Количество) * Convert.ToDecimal(производство.Количество);
+                        needSum1 = averageSum1 * Convert.ToDecimal(needAmount1);
+
+                        var productAmountt1 = _context.Сырьёs
+                            .Where(r => r.Id == ingred.Сырье)
+                            .FirstOrDefault();
+                        productAmountt1.Количество -= (short)needAmount1;
+                        productAmountt1.Сумма -= needSum1;
+
+                        totalSum1 += needSum1;
+                    }
+
+                }
+            }
+
+            var prod = _context.ГотоваяПродукцияs.Where(u => u.Id == производство.Продукция).FirstOrDefault();
+            prod.Количество -= (short)deleted.Количество;
+            prod.Сумма -= totalSum;
+            prod.Количество += (short)производство.Количество;
+            prod.Сумма += totalSum1;
+
+
+            _context.Remove(deleted);
+            _context.Update(производство);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+
+
+
+
+
             ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", производство.Продукция);
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", производство.Сотрудник);
             return View(производство);
