@@ -21,8 +21,8 @@ namespace ToysDB.Controllers
         // GET: Сотрудники
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.Сотрудникиs.Include(с => с.ДолжностьNavigation);
-            return View(await toysContext.ToListAsync());
+            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
+            return View(employeers);
         }
 
         // GET: Сотрудники/Details/5

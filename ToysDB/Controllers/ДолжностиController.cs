@@ -21,7 +21,8 @@ namespace ToysDB.Controllers
         // GET: Должности
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Должностиs.ToListAsync());
+            var positions = await _context.Должностиs.FromSqlRaw("dbo.Get_Positions").ToListAsync();
+            return View(positions);
         }
 
         // GET: Должности/Details/5

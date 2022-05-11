@@ -21,8 +21,8 @@ namespace ToysDB.Controllers
         // GET: Сырьё
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.Сырьёs.Include(с => с.ЕдиницаИзмеренияNavigation);
-            return View(await toysContext.ToListAsync());
+            var raw_Materials = await _context.Должностиs.FromSqlRaw("dbo.Get_Raw_Materials").ToListAsync();
+            return View(raw_Materials);
         }
 
         // GET: Сырьё/Details/5

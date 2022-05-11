@@ -21,8 +21,21 @@ namespace ToysDB.Controllers
         // GET: ГотоваяПродукция
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.ГотоваяПродукцияs.Include(г => г.ЕдиницаИзмеренияNavigation);
-            return View(await toysContext.ToListAsync());
+            var units = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.Get_Units").ToListAsync();
+            var finishedProduction = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.Get_Finished_Production").ToListAsync();
+            foreach (var fp in finishedProduction)
+            {
+                foreach (var u in units)
+                {
+                    if (fp.ЕдиницаИзмерения == u.Id)
+                    {
+                        fp.ЕдиницаИзмеренияNavigation.Наименование = u.Наименование;
+                    }
+                }
+               
+            }
+
+            return View(finishedProduction);
         }
 
         // GET: ГотоваяПродукция/Details/5

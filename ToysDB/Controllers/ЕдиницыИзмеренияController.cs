@@ -21,7 +21,8 @@ namespace ToysDB.Controllers
         // GET: ЕдиницыИзмерения
         public async Task<IActionResult> Index()
         {
-            return View(await _context.ЕдиницыИзмеренияs.ToListAsync());
+            var units = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.Get_Units").ToListAsync();
+            return View(units);
         }
 
         // GET: ЕдиницыИзмерения/Details/5

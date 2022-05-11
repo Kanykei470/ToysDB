@@ -20,33 +20,47 @@ namespace ToysDB.Controllers
         }
 
         // GET: Ингредиенты
-        public async Task<IActionResult> Index(int? finprod, string name)
+        public async Task<IActionResult> Index(
+            //int? finprod, string name
+            )
         {
+            //IQueryable<Ингредиенты> Ингредиенты = _context.Ингредиентыs.Include(p => p.ПродукцияNavigation).Include(u => u.СырьеNavigation);
+            //if (finprod != null && finprod != 0)
+            //{
+            //    Ингредиенты = Ингредиенты.Where(p => p.ПродукцияNavigation.Id == finprod);
+            //}
 
-            IQueryable<Ингредиенты> Ингредиенты = _context.Ингредиентыs.Include(p => p.ПродукцияNavigation).Include(u => u.СырьеNavigation);
-            if (finprod != null && finprod != 0)
+            //List<ГотоваяПродукция> ГотоваяПродукция = await _context.ГотоваяПродукцияs.ToListAsync();
+
+            //ГотоваяПродукция.Insert(0, new ГотоваяПродукция { Наименование = "Все", Id = 0 });
+
+            //ИнгViewModel ingridientsViewModel = new ИнгViewModel
+            //{
+            //    Ингредиенты = Ингредиенты,
+            //    ГотовыйПродукт = new SelectList(ГотоваяПродукция, "Id", "Наименование"),
+            //    Наименование = name,
+            //    ВыбранныйПродукт = finprod
+            //};
+            //if (finprod.HasValue)
+            //{
+            //    var itemToSelect = ingridientsViewModel.ГотовыйПродукт.FirstOrDefault(x => x.Value == finprod.Value.ToString());
+            //    itemToSelect.Selected = true;
+            //}
+
+            var rawMaterials = await _context.Сырьёs.FromSqlRaw("dbo.Get_Raw_Materials").ToListAsync();
+            var ingridients = await _context.Ингредиентыs.FromSqlRaw("dbo.Get_Ingredients").ToListAsync();
+
+            foreach (var ing in ingridients)
             {
-                Ингредиенты = Ингредиенты.Where(p => p.ПродукцияNavigation.Id == finprod);
+                foreach (var raw in rawMaterials)
+                {
+                    if (ing.Сырье == raw.Id)
+                    {
+                       ing.СырьеNavigation.Наименование=raw.Наименование;
+                    }
+                }
             }
-
-            List<ГотоваяПродукция> ГотоваяПродукция = await _context.ГотоваяПродукцияs.ToListAsync();
-
-            ГотоваяПродукция.Insert(0, new ГотоваяПродукция { Наименование = "Все", Id = 0 });
-
-            ИнгViewModel ingridientsViewModel = new ИнгViewModel
-            {
-                Ингредиенты = Ингредиенты,
-                ГотовыйПродукт = new SelectList(ГотоваяПродукция, "Id", "Наименование"),
-                Наименование = name,
-                ВыбранныйПродукт = finprod
-            };
-            if (finprod.HasValue)
-            {
-                var itemToSelect = ingridientsViewModel.ГотовыйПродукт.FirstOrDefault(x => x.Value == finprod.Value.ToString());
-                itemToSelect.Selected = true;
-            }
-
-            return View(ingridientsViewModel);
+            return View(ingridients);
         }
 
         // GET: Ингредиенты/Details/5

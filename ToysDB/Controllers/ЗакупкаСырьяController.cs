@@ -24,8 +24,29 @@ namespace ToysDB.Controllers
         // GET: ЗакупкаСырья
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.ЗакупкаСырьяs.Include(з => з.СотрудникNavigation).Include(з => з.СырьёNavigation);
-            return View(await toysContext.ToListAsync());
+            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
+            var rawMaterials = await _context.Сырьёs.FromSqlRaw("dbo.Get_Raw_Materials").ToListAsync();
+            var prm = await _context.ЗакупкаСырьяs.FromSqlRaw("dbo.Get_Purchase_Of_Raw_Materials").ToListAsync();
+
+            foreach (var prms in prm)
+            {
+                foreach (var emp in employeers)
+                {
+                    if (prms.Сотрудник == emp.Id)
+                    {
+                        prms.СотрудникNavigation.Фио = emp.Фио;
+                    }
+                }
+                foreach (var raw in rawMaterials)
+                {
+                    if (prms.Сырьё == raw.Id)
+                    {
+                        prms.СырьёNavigation.Наименование = raw.Наименование;
+                    }
+                }
+            }
+
+            return View(prm);
         }
 
         // GET: ЗакупкаСырья/Details/5

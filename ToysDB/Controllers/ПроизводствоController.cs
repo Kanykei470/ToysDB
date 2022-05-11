@@ -22,8 +22,29 @@ namespace ToysDB.Controllers
         // GET: Производство
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.Производствоs.Include(п => п.ПродукцияNavigation).Include(п => п.СотрудникNavigation);
-            return View(await toysContext.ToListAsync());
+            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
+            var finishedproduction = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.Get_Finished_Production").ToListAsync();
+            var Production = await _context.Производствоs.FromSqlRaw("dbo.Get_Production").ToListAsync();
+
+            foreach (var prod in Production)
+            {
+                foreach (var emp in employeers)
+                {
+                    if (prod.Сотрудник == emp.Id)
+                    {
+                        prod.СотрудникNavigation.Фио = emp.Фио;
+                    }
+                }
+                foreach (var fp in finishedproduction)
+                {
+                    if (prod.Продукция == fp.Id)
+                    {
+                        prod.ПродукцияNavigation.Наименование = fp.Наименование;
+                    }
+                }
+            }
+
+            return View(Production);
         }
 
         // GET: Производство/Details/5
