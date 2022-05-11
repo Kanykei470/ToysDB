@@ -61,10 +61,7 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Продукция,Количество,Дата,Сотрудник")] Производство производство)
         {
-            if (производство.Дата == null)
-            {
-                производство.Дата = DateTime.Now;
-            }
+            
             ToysContext db = new ToysContext();
             List<Ингредиенты> ingredients = new List<Ингредиенты>();
             List<Сырьё> rawMaterials = new List<Сырьё>();

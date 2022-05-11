@@ -21,8 +21,6 @@ namespace ToysDB.Controllers
 
             // GET: Зарплата
 
-
-
             public void create(string yearString, string monthstring, [Bind("Id,Год,Месяц,Сотрудники,Закуп,Продажа,Производство,Всего,Оклад,Бонус,ОбщаяСуммаКВыдаче,Статус")] Зарплата zp, int sotrId)
             {
                 var emp = _context.Сотрудникиs;
@@ -75,7 +73,6 @@ namespace ToysDB.Controllers
                 _context.Add(zp);
                 _context.SaveChanges();
             }
-
 
 
             public async Task<IActionResult> paySalary(string yearString, string monthString)

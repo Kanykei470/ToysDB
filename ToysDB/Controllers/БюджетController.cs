@@ -21,8 +21,8 @@ namespace ToysDB.Controllers
         // GET: Бюджет
         public async Task<IActionResult> Index()
         {
-
-            return View(await _context.Бюджетs.ToListAsync());
+            var budget = await _context.Бюджетs.FromSqlRaw("dbo.Get_Budget").ToListAsync();
+            return View(budget);
         }
 
 
