@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 
@@ -21,27 +22,40 @@ namespace ToysDB.Controllers
         // GET: Сырьё
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.Сырьёs.Include(с => с.ЕдиницаИзмеренияNavigation);
-            return View(await toysContext.ToListAsync());
+            var rawMaterials = await _context.Сырьёs.FromSqlRaw("dbo.Get_Raw_Materials").ToListAsync();
+            var units = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.Get_Units").ToListAsync();
+            foreach (var rm in rawMaterials)
+            {
+                foreach (var u in units)
+                {
+                    if (rm.ЕдиницаИзмерения == u.Id)
+                    {
+                        rm.ЕдиницаИзмеренияNavigation.Наименование = u.Наименование;
+                    }
+                }
+
+            }
+            return View(rawMaterials);
         }
 
         // GET: Сырьё/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
-            if (id == null)
+            //Единицы и
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var rawM = await _context.Сырьёs.FromSqlRaw("dbo.GetID_Raw_Materials @id", ID).ToListAsync();
+            SqlParameter unitID = new SqlParameter("@Id", rawM.FirstOrDefault().ЕдиницаИзмерения);
+            var unit = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.GetID_Units @id", unitID).ToListAsync();
+
+            if (rawM.FirstOrDefault().ЕдиницаИзмерения == unit.FirstOrDefault().Id)
+                rawM.FirstOrDefault().ЕдиницаИзмеренияNavigation.Наименование = unit.FirstOrDefault().Наименование;
+
+            if (rawM == null)
             {
                 return NotFound();
             }
 
-            var сырьё = await _context.Сырьёs
-                .Include(с => с.ЕдиницаИзмеренияNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (сырьё == null)
-            {
-                return NotFound();
-            }
-
-            return View(сырьё);
+            return View(rawM.FirstOrDefault());
         }
 
         // GET: Сырьё/Create

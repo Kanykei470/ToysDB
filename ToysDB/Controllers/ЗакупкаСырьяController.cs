@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AspNetCoreHero.ToastNotification.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 
@@ -24,28 +25,57 @@ namespace ToysDB.Controllers
         // GET: ЗакупкаСырья
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.ЗакупкаСырьяs.Include(з => з.СотрудникNavigation).Include(з => з.СырьёNavigation);
-            return View(await toysContext.ToListAsync());
+            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
+            var rawMaterials = await _context.Сырьёs.FromSqlRaw("dbo.Get_Raw_Materials").ToListAsync();
+            var prm = await _context.ЗакупкаСырьяs.FromSqlRaw("dbo.Get_Purchase_Of_Raw_Materials").ToListAsync();
+
+            foreach (var prms in prm)
+            {
+                foreach (var emp in employeers)
+                {
+                    if (prms.Сотрудник == emp.Id)
+                    {
+                        prms.СотрудникNavigation.Фио = emp.Фио;
+                    }
+                }
+                foreach (var raw in rawMaterials)
+                {
+                    if (prms.Сырьё == raw.Id)
+                    {
+                        prms.СырьёNavigation.Наименование = raw.Наименование;
+                    }
+                }
+            }
+
+            return View(prm);
         }
 
         // GET: ЗакупкаСырья/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
-            if (id == null)
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var purchaseOfRaw_Materials = await _context.ЗакупкаСырьяs.FromSqlRaw("dbo.GetID_Purchase_Of_Raw_Materials @id", ID).ToListAsync();
+            SqlParameter emp = new SqlParameter("@Id", purchaseOfRaw_Materials.FirstOrDefault().Сотрудник);
+            var empID = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", emp).ToListAsync();
+            SqlParameter rawMaterials = new SqlParameter("@Id", purchaseOfRaw_Materials.FirstOrDefault().Сырьё);
+            var rmID = await _context.Сырьёs.FromSqlRaw("dbo.GetID_Raw_Materials @id", rawMaterials).ToListAsync();
+
+            if ((purchaseOfRaw_Materials.FirstOrDefault().Сотрудник == empID.FirstOrDefault().Id) &&
+                (purchaseOfRaw_Materials.FirstOrDefault().Сырьё == rmID.FirstOrDefault().Id)) 
+            { 
+                purchaseOfRaw_Materials.FirstOrDefault().СотрудникNavigation.Фио= empID.FirstOrDefault().Фио;
+                purchaseOfRaw_Materials.FirstOrDefault().СырьёNavigation.Наименование = rmID.FirstOrDefault().Наименование;
+            }
+        //Сотрудник и сырье
+            if (ID == null)
             {
                 return NotFound();
             }
-
-            var закупкаСырья = await _context.ЗакупкаСырьяs
-                .Include(з => з.СотрудникNavigation)
-                .Include(з => з.СырьёNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (закупкаСырья == null)
+            if (purchaseOfRaw_Materials == null)
             {
                 return NotFound();
             }
-
-            return View(закупкаСырья);
+            return View(purchaseOfRaw_Materials.FirstOrDefault());
         }
 
         // GET: ЗакупкаСырья/Create

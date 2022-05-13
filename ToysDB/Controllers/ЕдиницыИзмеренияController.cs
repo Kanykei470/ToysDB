@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 
@@ -21,25 +22,26 @@ namespace ToysDB.Controllers
         // GET: ЕдиницыИзмерения
         public async Task<IActionResult> Index()
         {
-            return View(await _context.ЕдиницыИзмеренияs.ToListAsync());
+            var units = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.Get_Units").ToListAsync();
+            return View(units);
         }
 
         // GET: ЕдиницыИзмерения/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
-            if (id == null)
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var Units = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.GetID_Units @id", ID).ToListAsync();
+
+            if (ID == null)
             {
                 return NotFound();
             }
 
-            var единицыИзмерения = await _context.ЕдиницыИзмеренияs
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (единицыИзмерения == null)
+            if (Units == null)
             {
                 return NotFound();
             }
-
-            return View(единицыИзмерения);
+            return View(Units.FirstOrDefault());
         }
 
         // GET: ЕдиницыИзмерения/Create

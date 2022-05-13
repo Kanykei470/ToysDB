@@ -21,27 +21,17 @@ namespace ToysDB.Controllers
         // GET: Бюджет
         public async Task<IActionResult> Index()
         {
-
-            return View(await _context.Бюджетs.ToListAsync());
+            var budget = await _context.Бюджетs.FromSqlRaw("dbo.Get_Budget").ToListAsync();
+            return View(budget);
         }
 
 
         // GET: Бюджет/Details/5
-        public async Task<IActionResult> Details(byte? id)
+        public async Task<IActionResult> Details()
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var бюджет = await _context.Бюджетs
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (бюджет == null)
-            {
-                return NotFound();
-            }
-
-            return View(бюджет);
+            var budget = await _context.Бюджетs.FromSqlRaw("dbo.Get_Budget").ToListAsync();
+            return View(budget);
         }
 
         // GET: Бюджет/Create

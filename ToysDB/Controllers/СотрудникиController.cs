@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 
@@ -21,27 +22,45 @@ namespace ToysDB.Controllers
         // GET: Сотрудники
         public async Task<IActionResult> Index()
         {
-            var toysContext = _context.Сотрудникиs.Include(с => с.ДолжностьNavigation);
-            return View(await toysContext.ToListAsync());
+            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
+            var positions = await _context.Должностиs.FromSqlRaw("dbo.Get_Positions").ToListAsync();
+            foreach (var e in employeers)
+            {
+                foreach (var p in positions)
+                {
+                    if (e.Должность == p.Id)
+                    {
+                        e.ДолжностьNavigation.Должность = p.Должность;
+                    }
+                }
+                
+            }
+            return View(employeers);
         }
 
         // GET: Сотрудники/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
-            if (id == null)
+            //Должность
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", ID).ToListAsync();
+            SqlParameter pos = new SqlParameter("@Id", employeers.FirstOrDefault().Должность);
+            var posID = await _context.Должностиs.FromSqlRaw("dbo.GetID_Positions @id", pos).ToListAsync();
+
+            if (employeers.FirstOrDefault().Должность == posID.FirstOrDefault().Id)
+            {
+                employeers.FirstOrDefault().ДолжностьNavigation.Должность = posID.FirstOrDefault().Должность;
+            }
+
+            if (ID == null)
             {
                 return NotFound();
             }
-
-            var сотрудники = await _context.Сотрудникиs
-                .Include(с => с.ДолжностьNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (сотрудники == null)
+            if (employeers == null)
             {
                 return NotFound();
             }
-
-            return View(сотрудники);
+            return View(employeers.FirstOrDefault());
         }
 
         // GET: Сотрудники/Create

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 using Microsoft.AspNetCore.Http;
 using AspNetCoreHero.ToastNotification.Abstractions;
+using Microsoft.Data.SqlClient;
 
 namespace ToysDB.Controllers
 {
@@ -25,30 +26,58 @@ namespace ToysDB.Controllers
         // GET: ПродажаПродукции
         public async Task<IActionResult> Index()
         {
-           
-            var toysContext = _context.ПродажаПродукцииs.Include(п => п.СотрудникNavigation).Include(п => п.ПродукцияNavigation);
-            return View(await toysContext.ToListAsync());
+            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
+            var finishedproduction = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.Get_Finished_Production").ToListAsync();
+            var saleOfProducts = await _context.ПродажаПродукцииs.FromSqlRaw("dbo.Get_Sale_Of_Products").ToListAsync();
+
+            foreach (var sp in saleOfProducts)
+            {
+                foreach (var emp in employeers)
+                {
+                    if (sp.Сотрудник == emp.Id)
+                    {
+                        sp.СотрудникNavigation.Фио = emp.Фио;
+                    }
+                }
+                foreach (var fp in finishedproduction)
+                {
+                    if (sp.Продукция == fp.Id)
+                    {
+                        sp.ПродукцияNavigation.Наименование = fp.Наименование;
+                    }
+                }
+            }
+
+            return View(saleOfProducts);
         }
 
         // GET: ПродажаПродукции/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
+            //продукция и Сотрудник
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var saleOfProducts = await _context.ПродажаПродукцииs.FromSqlRaw("dbo.GetID_Sale_Of_Products @id", ID).ToListAsync();
+            SqlParameter emp = new SqlParameter("@Id", saleOfProducts.FirstOrDefault().Сотрудник);
+            var empID = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", emp).ToListAsync();
+            SqlParameter production = new SqlParameter("@Id", saleOfProducts.FirstOrDefault().Продукция);
+            var pID = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.GetID_Finished_Production @id", production).ToListAsync();
 
-            if (id == null)
+            if ((saleOfProducts.FirstOrDefault().Сотрудник == empID.FirstOrDefault().Id) &&
+                (saleOfProducts.FirstOrDefault().Продукция == pID.FirstOrDefault().Id))
+            {
+                saleOfProducts.FirstOrDefault().СотрудникNavigation.Фио = empID.FirstOrDefault().Фио;
+                saleOfProducts.FirstOrDefault().ПродукцияNavigation.Наименование = pID.FirstOrDefault().Наименование;
+            }
+            if (ID == null)
             {
                 return NotFound();
             }
-
-            var продажаПродукции = await _context.ПродажаПродукцииs
-                .Include(п => п.ПродукцияNavigation)
-                .Include(п => п.СотрудникNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (продажаПродукции == null)
+            if (saleOfProducts == null)
             {
                 return NotFound();
             }
+            return View(saleOfProducts.FirstOrDefault());
 
-            return View(продажаПродукции);
         }
 
         // GET: ПродажаПродукции/Create

@@ -1,17 +1,4 @@
-﻿@using (Html.BeginForm())
-{
-    <p>
-
-        @Html.DropDownList("yearString", ViewBag.years as SelectList)
-        @Html.DropDownList("monthString", ViewBag.months as SelectList)
-
-        <input type="submit" value="Ок" class="btn btn-outline-light" />
-        <a asp-action="Index" class="btn btn-outline-light">Все записи</a>
-        <input type="submit" asp-action="paySalary" class="btn btn-outline-light" value="Выдать з/п" />
-
-
-    </p>
-}
+﻿
 @model IEnumerable<ToysDB.Models.Зарплата>
 
 @{
@@ -30,14 +17,12 @@
         <input type="submit" value="Ок" class="btn btn-outline-light" />
         <a asp-action="Index" class="btn btn-outline-light">Все записи</a>
         <input type="submit" asp-action="paySalary" class="btn btn-outline-light" value="Выдать з/п" />
-
-
     </p>
 }
 
 
 
-<table class="table">
+<table class="table table-striped table-dark">
     <thead>
         <tr>
             <th>

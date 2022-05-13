@@ -17,20 +17,20 @@
             @Html.DisplayFor(model => model.Количество)
         </dd>
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ПродукцияNavigation)
+            @Html.DisplayNameFor(model => model.Продукция)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ПродукцияNavigation.Id)
+            @Html.DisplayFor(model => model.ПродукцияNavigation.Наименование)
         </dd>
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.СырьеNavigation)
+            @Html.DisplayNameFor(model => model.Сырье)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.СырьеNavigation.Id)
+            @Html.DisplayFor(model => model.СырьеNavigation.Наименование)
         </dd>
     </dl>
 </div>
 <div>
-    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+   <a asp-action="Edit" class="btn btn-outline-warning" asp-route-id="@Model.Id">Изменить</a> |
+    <a asp-action="Index" class = "btn btn-outline-primary" >Назад</a>
 </div>
