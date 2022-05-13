@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 
@@ -28,19 +29,14 @@ namespace ToysDB.Controllers
         // GET: Должности/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var positions = await _context.Должностиs.FromSqlRaw("dbo.GetID_Positions @id", ID).ToListAsync();
             if (id == null)
             {
                 return NotFound();
             }
 
-            var должности = await _context.Должностиs
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (должности == null)
-            {
-                return NotFound();
-            }
-
-            return View(должности);
+            return View(positions.FirstOrDefault());
         }
 
         // GET: Должности/Create

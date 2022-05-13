@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 
@@ -41,20 +42,20 @@ namespace ToysDB.Controllers
         // GET: ГотоваяПродукция/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
-            if (id == null)
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var readyProducts = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.GetID_Finished_Production @id", ID).ToListAsync();
+            SqlParameter unitID = new SqlParameter("@Id", readyProducts.FirstOrDefault().ЕдиницаИзмерения);
+            var unit = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.GetID_Units @id", unitID).ToListAsync();
+
+            if (readyProducts.FirstOrDefault().ЕдиницаИзмерения == unit.FirstOrDefault().Id)
+                readyProducts.FirstOrDefault().ЕдиницаИзмеренияNavigation.Наименование = unit.FirstOrDefault().Наименование;
+
+            if (readyProducts == null)
             {
                 return NotFound();
             }
 
-            var готоваяПродукция = await _context.ГотоваяПродукцияs
-                .Include(г => г.ЕдиницаИзмеренияNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (готоваяПродукция == null)
-            {
-                return NotFound();
-            }
-
-            return View(готоваяПродукция);
+            return View(readyProducts.FirstOrDefault());
         }
 
         // GET: ГотоваяПродукция/Create

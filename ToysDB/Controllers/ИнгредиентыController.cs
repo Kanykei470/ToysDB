@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 using ToysDB.ViewModels;
@@ -66,21 +67,25 @@ namespace ToysDB.Controllers
         // GET: Ингредиенты/Details/5
         public async Task<IActionResult> Details(byte? id)
         {
-            if (id == null)
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var ingr = await _context.Ингредиентыs.FromSqlRaw("dbo.GetID_Ingredients @id", ID).ToListAsync();
+            SqlParameter rmID = new SqlParameter("@Id", ingr.FirstOrDefault().Сырье);
+            var rawMaterials = await _context.Сырьёs.FromSqlRaw("dbo.GetID_Raw_Materials @id", rmID).ToListAsync();
+            SqlParameter production = new SqlParameter("@Id", ingr.FirstOrDefault().Продукция);
+            var pID = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.GetID_Finished_Production @id", production).ToListAsync();
+
+            if ((ingr.FirstOrDefault().Сырье == rawMaterials.FirstOrDefault().Id) &&
+                (ingr.FirstOrDefault().Продукция == pID.FirstOrDefault().Id)) 
+            {
+                ingr.FirstOrDefault().СырьеNavigation.Наименование = rawMaterials.FirstOrDefault().Наименование;
+                ingr.FirstOrDefault().ПродукцияNavigation.Наименование = pID.FirstOrDefault().Наименование;
+            }
+            if (ingr == null)
             {
                 return NotFound();
             }
 
-            var ингредиенты = await _context.Ингредиентыs
-                .Include(и => и.ПродукцияNavigation)
-                .Include(и => и.СырьеNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ингредиенты == null)
-            {
-                return NotFound();
-            }
-
-            return View(ингредиенты);
+            return View(ingr.FirstOrDefault());
         }
 
         // GET: Ингредиенты/Create

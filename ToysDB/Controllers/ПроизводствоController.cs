@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 using AspNetCoreHero.ToastNotification;
+using Microsoft.Data.SqlClient;
 
 namespace ToysDB.Controllers
 {
@@ -50,21 +51,29 @@ namespace ToysDB.Controllers
         // GET: Производство/Details/5
         public async Task<IActionResult> Details(string id)
         {
-            if (id == null)
+            //Продукция и Сотрудник
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var productionO = await _context.Производствоs.FromSqlRaw("dbo.GetID_Production @id", ID).ToListAsync();
+            SqlParameter emp = new SqlParameter("@Id", productionO.FirstOrDefault().Сотрудник);
+            var empID = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", emp).ToListAsync();
+            SqlParameter production = new SqlParameter("@Id", productionO.FirstOrDefault().Продукция);
+            var pID = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.GetID_Finished_Production @id", production).ToListAsync();
+
+            if ((productionO.FirstOrDefault().Сотрудник == empID.FirstOrDefault().Id) &&
+                (productionO.FirstOrDefault().Продукция == pID.FirstOrDefault().Id))
+            {
+                productionO.FirstOrDefault().СотрудникNavigation.Фио = empID.FirstOrDefault().Фио;
+                productionO.FirstOrDefault().ПродукцияNavigation.Наименование = pID.FirstOrDefault().Наименование;
+            }
+            if (ID == null)
             {
                 return NotFound();
             }
-
-            var производство = await _context.Производствоs
-                .Include(п => п.ПродукцияNavigation)
-                .Include(п => п.СотрудникNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (производство == null)
+            if (productionO == null)
             {
                 return NotFound();
             }
-
-            return View(производство);
+            return View(productionO.FirstOrDefault());
         }
 
         // GET: Производство/Create
