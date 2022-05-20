@@ -101,17 +101,31 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Продукция,Сырье,Количество")] Ингредиенты ингредиенты)
+        public async Task<IActionResult> Create([Bind("Id,Продукция,Сырье,Количество")] Ингредиенты ingredient)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(ингредиенты);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    SqlParameter Product = new SqlParameter("@Product", ingredient.Продукция);
+                    SqlParameter RawMaterial = new SqlParameter("@RawMaterial", ingredient.Сырье);
+                    SqlParameter Amount = new SqlParameter("@Amount", ingredient.Количество);
+
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Ingredients @Product, @RawMaterial, @Amount", Product, RawMaterial, Amount);
+
+                    return RedirectToAction(nameof(Index));
+                }
+                var finishedProducts = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование");
+                var dataRawMaterial = new SelectList(_context.Сырьёs, "Id", "Наименование");
+
+                ViewData["Product"] = new SelectList(finishedProducts, "Id", "Title", ingredient.Продукция);
+                ViewData["RawMaterial"] = new SelectList(dataRawMaterial, "Id", "Title", ingredient.Сырье);
+                return View(ingredient);
             }
-            ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", ингредиенты.Продукция);
-            ViewData["Сырье"] = new SelectList(_context.Сырьёs, "Id", "Наименование", ингредиенты.Сырье);
-            return View(ингредиенты);
+            catch (SqlException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // GET: Ингредиенты/Edit/5
@@ -121,15 +135,19 @@ namespace ToysDB.Controllers
             {
                 return NotFound();
             }
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var ingredient = await _context.Ингредиентыs.FromSqlRaw("dbo.GetID_Ingredients @Id", Id).ToListAsync();
 
-            var ингредиенты = await _context.Ингредиентыs.FindAsync(id);
-            if (ингредиенты == null)
+            if (ingredient.FirstOrDefault() == null)
             {
                 return NotFound();
             }
-            ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", ингредиенты.Продукция);
-            ViewData["Сырье"] = new SelectList(_context.Сырьёs, "Id", "Наименование", ингредиенты.Сырье);
-            return View(ингредиенты);
+            var finishedProducts = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование");
+            var dataRawMaterial = new SelectList(_context.Сырьёs, "Id", "Наименование");
+
+            ViewData["Product"] = new SelectList(finishedProducts, "Id", "Title", ingredient.FirstOrDefault().Продукция);
+            ViewData["RawMaterial"] = new SelectList(dataRawMaterial, "Id", "Title", ingredient.FirstOrDefault().Сырье);
+            return View(ingredient.FirstOrDefault());
         }
 
         // POST: Ингредиенты/Edit/5
@@ -137,9 +155,9 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(byte id, [Bind("Id,Продукция,Сырье,Количество")] Ингредиенты ингредиенты)
+        public async Task<IActionResult> Edit(byte id, [Bind("Id,Продукция,Сырье,Количество")] Ингредиенты ingredient)
         {
-            if (id != ингредиенты.Id)
+            if (id != ingredient.Id)
             {
                 return NotFound();
             }
@@ -148,12 +166,17 @@ namespace ToysDB.Controllers
             {
                 try
                 {
-                    _context.Update(ингредиенты);
-                    await _context.SaveChangesAsync();
+                    SqlParameter Id = new SqlParameter("@Id", ingredient.Id);
+                    SqlParameter Product = new SqlParameter("@Product", ingredient.Продукция);
+                    SqlParameter RawMaterial = new SqlParameter("@RawMaterial", ingredient.Сырье);
+                    SqlParameter Amount = new SqlParameter("@Amount", ingredient.Количество);
+
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Ingredients @Id, @Product, @RawMaterial, @Amount", Id, Product, RawMaterial, Amount);
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ИнгредиентыExists(ингредиенты.Id))
+                    if (!ИнгредиентыExists(ingredient.Id))
                     {
                         return NotFound();
                     }
@@ -162,11 +185,16 @@ namespace ToysDB.Controllers
                         throw;
                     }
                 }
+                catch (SqlException ex)
+                {
+                    return NotFound(ex.Message);
+                }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", ингредиенты.Продукция);
-            ViewData["Сырье"] = new SelectList(_context.Сырьёs, "Id", "Наименование", ингредиенты.Сырье);
-            return View(ингредиенты);
+            ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Продукция",ingredient.Продукция);
+            ViewData["Сырье"] =  new SelectList(_context.Сырьёs, "Id", "Сырье",ingredient.Сырье);
+
+            return View(ingredient);
         }
 
         // GET: Ингредиенты/Delete/5
@@ -176,17 +204,26 @@ namespace ToysDB.Controllers
             {
                 return NotFound();
             }
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var ingredient = await _context.Ингредиентыs.FromSqlRaw("dbo.GetID_Ingredients @Id", Id).ToListAsync();
 
-            var ингредиенты = await _context.Ингредиентыs
-                .Include(и => и.ПродукцияNavigation)
-                .Include(и => и.СырьеNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ингредиенты == null)
+            SqlParameter IdProduc = new SqlParameter("@IdProduc", ingredient.FirstOrDefault().Продукция);
+            var product = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.GetID_Ingredients @IdProduc", IdProduc).ToListAsync();
+
+            SqlParameter IdRaw = new SqlParameter("@IdRaw", ingredient.FirstOrDefault().Сырье);
+            var raw = await _context.Сырьёs.FromSqlRaw("dbo.GetID_Raw_Materials @IdRaw", IdRaw).ToListAsync();
+
+            if (ingredient.FirstOrDefault().Продукция == product.FirstOrDefault().Id)
+                ingredient.FirstOrDefault().ПродукцияNavigation.Наименование = product.FirstOrDefault().Наименование;
+            if (ingredient.FirstOrDefault().Сырье == raw.FirstOrDefault().Id)
+                ingredient.FirstOrDefault().СырьеNavigation.Наименование = raw.FirstOrDefault().Наименование;
+
+            if (ingredient.FirstOrDefault() == null)
             {
                 return NotFound();
             }
 
-            return View(ингредиенты);
+            return View(ingredient.FirstOrDefault());
         }
 
         // POST: Ингредиенты/Delete/5
@@ -194,9 +231,8 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
-            var ингредиенты = await _context.Ингредиентыs.FindAsync(id);
-            _context.Ингредиентыs.Remove(ингредиенты);
-            await _context.SaveChangesAsync();
+            SqlParameter Id = new SqlParameter("@Id", id);
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.Delete_Ingredients @Id", Id);
             return RedirectToAction(nameof(Index));
         }
 

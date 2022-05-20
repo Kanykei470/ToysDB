@@ -52,13 +52,20 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Должность")] Должности должности)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(должности);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    SqlParameter Position = new SqlParameter("@Должность", должности.Должность);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Positions @Должность", Position);
+                    return RedirectToAction(nameof(Index));
+                }
+                return View(должности);
             }
-            return View(должности);
+            catch (SqlException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // GET: Должности/Edit/5
@@ -68,13 +75,15 @@ namespace ToysDB.Controllers
             {
                 return NotFound();
             }
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var position = await _context.Должностиs.FromSqlRaw("dbo.GetID_Positions @Id", Id).ToListAsync();
 
-            var должности = await _context.Должностиs.FindAsync(id);
-            if (должности == null)
+            //var post = await _context.Posts.FindAsync(id);
+            if (position.FirstOrDefault() == null)
             {
                 return NotFound();
             }
-            return View(должности);
+            return View(position.FirstOrDefault());
         }
 
         // POST: Должности/Edit/5
@@ -93,8 +102,9 @@ namespace ToysDB.Controllers
             {
                 try
                 {
-                    _context.Update(должности);
-                    await _context.SaveChangesAsync();
+                    SqlParameter Id = new SqlParameter("@Id", должности.Id);
+                    SqlParameter Position = new SqlParameter("@Должность", должности.Должность);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Position @Id, @Должность", Id, Position);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -106,6 +116,10 @@ namespace ToysDB.Controllers
                     {
                         throw;
                     }
+                }
+                catch (SqlException ex)
+                {
+                    return NotFound(ex.Message);
                 }
                 return RedirectToAction(nameof(Index));
             }
@@ -120,14 +134,15 @@ namespace ToysDB.Controllers
                 return NotFound();
             }
 
-            var должности = await _context.Должностиs
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (должности == null)
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var post = await _context.Должностиs.FromSqlRaw("dbo.Delete_Positions @Id", Id).ToListAsync();
+
+            if (post.FirstOrDefault() == null)
             {
                 return NotFound();
             }
 
-            return View(должности);
+            return View(post.FirstOrDefault());
         }
 
         // POST: Должности/Delete/5
@@ -135,9 +150,8 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
-            var должности = await _context.Должностиs.FindAsync(id);
-            _context.Должностиs.Remove(должности);
-            await _context.SaveChangesAsync();
+            SqlParameter Id = new SqlParameter("@Id", id);
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.Delete_Positions @Id", Id);
             return RedirectToAction(nameof(Index));
         }
 

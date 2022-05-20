@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 
@@ -63,13 +64,13 @@ namespace ToysDB.Controllers
             {
                 return NotFound();
             }
-
-            var бюджет = await _context.Бюджетs.FindAsync(id);
-            if (бюджет == null)
+            var budget = await _context.Бюджетs.FromSqlRaw("dbo.Get_Budget").ToListAsync();
+            //var budget = await _context.Budgets.FindAsync(id);
+            if (budget.FirstOrDefault() == null)
             {
                 return NotFound();
             }
-            return View(бюджет);
+            return View(budget.FirstOrDefault());
         }
 
         // POST: Бюджет/Edit/5
@@ -88,8 +89,12 @@ namespace ToysDB.Controllers
             {
                 try
                 {
-                    _context.Update(бюджет);
-                    await _context.SaveChangesAsync();
+                    SqlParameter Id = new SqlParameter("@Id", бюджет.Id);
+                    SqlParameter SumOfBudget = new SqlParameter("@SumOfBudget", бюджет.Сумма);
+                    SqlParameter PercentageOfPremium = new SqlParameter("@PercentageOfPremium", бюджет.Процент);
+                    SqlParameter Bonus = new SqlParameter("@Bonus", бюджет.Бонус);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Budget @Id, @SumOfBudget, @PercentageOfPremium, @Bonus", Id, SumOfBudget, PercentageOfPremium, Bonus);
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -101,6 +106,10 @@ namespace ToysDB.Controllers
                     {
                         throw;
                     }
+                }
+                catch (SqlException ex)
+                {
+                    return NotFound(ex.Message);
                 }
                 return RedirectToAction(nameof(Index));
             }

@@ -73,13 +73,15 @@ namespace ToysDB.Controllers
             {
                 return NotFound();
             }
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var unit = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.GetID_Units @Id", Id).ToListAsync();
 
-            var единицыИзмерения = await _context.ЕдиницыИзмеренияs.FindAsync(id);
-            if (единицыИзмерения == null)
+            //var unit = await _context.Units.FindAsync(id);
+            if (unit.FirstOrDefault() == null)
             {
                 return NotFound();
             }
-            return View(единицыИзмерения);
+            return View(unit.FirstOrDefault());
         }
 
         // POST: ЕдиницыИзмерения/Edit/5
@@ -87,9 +89,9 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(byte id, [Bind("Id,Наименование")] ЕдиницыИзмерения единицыИзмерения)
+        public async Task<IActionResult> Edit(byte id, [Bind("Id,Наименование")] ЕдиницыИзмерения unit)
         {
-            if (id != единицыИзмерения.Id)
+            if (id != unit.Id)
             {
                 return NotFound();
             }
@@ -98,12 +100,14 @@ namespace ToysDB.Controllers
             {
                 try
                 {
-                    _context.Update(единицыИзмерения);
-                    await _context.SaveChangesAsync();
+                    SqlParameter Id = new SqlParameter("@Id", unit.Id);
+                    SqlParameter Title = new SqlParameter("@Title", unit.Наименование);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Units @Id, @Title", Id, Title);
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ЕдиницыИзмеренияExists(единицыИзмерения.Id))
+                    if (!ЕдиницыИзмеренияExists(unit.Id))
                     {
                         return NotFound();
                     }
@@ -112,9 +116,13 @@ namespace ToysDB.Controllers
                         throw;
                     }
                 }
+                catch (SqlException ex)
+                {
+                    return NotFound(ex.Message);
+                }
                 return RedirectToAction(nameof(Index));
             }
-            return View(единицыИзмерения);
+            return View(unit);
         }
 
         // GET: ЕдиницыИзмерения/Delete/5
@@ -124,15 +132,14 @@ namespace ToysDB.Controllers
             {
                 return NotFound();
             }
-
-            var единицыИзмерения = await _context.ЕдиницыИзмеренияs
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (единицыИзмерения == null)
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var unit = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.GetID_Units @Id", Id).ToListAsync();
+            if (unit.FirstOrDefault() == null)
             {
                 return NotFound();
             }
 
-            return View(единицыИзмерения);
+            return View(unit.FirstOrDefault());
         }
 
         // POST: ЕдиницыИзмерения/Delete/5
@@ -140,9 +147,8 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
-            var единицыИзмерения = await _context.ЕдиницыИзмеренияs.FindAsync(id);
-            _context.ЕдиницыИзмеренияs.Remove(единицыИзмерения);
-            await _context.SaveChangesAsync();
+            SqlParameter Id = new SqlParameter("@Id", id);
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.Delete_Units @Id", Id);
             return RedirectToAction(nameof(Index));
         }
 

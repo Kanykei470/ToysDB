@@ -22,9 +22,9 @@ namespace ToysDB.Controllers
         // GET: Сотрудники
         public async Task<IActionResult> Index()
         {
-            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
+            var сотрудникиrs = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
             var positions = await _context.Должностиs.FromSqlRaw("dbo.Get_Positions").ToListAsync();
-            foreach (var e in employeers)
+            foreach (var e in сотрудникиrs)
             {
                 foreach (var p in positions)
                 {
@@ -35,7 +35,7 @@ namespace ToysDB.Controllers
                 }
                 
             }
-            return View(employeers);
+            return View(сотрудникиrs);
         }
 
         // GET: Сотрудники/Details/5
@@ -43,30 +43,30 @@ namespace ToysDB.Controllers
         {
             //Должность
             SqlParameter ID = new SqlParameter("@Id", id);
-            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", ID).ToListAsync();
-            SqlParameter pos = new SqlParameter("@Id", employeers.FirstOrDefault().Должность);
+            var сотрудникиrs = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", ID).ToListAsync();
+            SqlParameter pos = new SqlParameter("@Id", сотрудникиrs.FirstOrDefault().Должность);
             var posID = await _context.Должностиs.FromSqlRaw("dbo.GetID_Positions @id", pos).ToListAsync();
 
-            if (employeers.FirstOrDefault().Должность == posID.FirstOrDefault().Id)
+            if (сотрудникиrs.FirstOrDefault().Должность == posID.FirstOrDefault().Id)
             {
-                employeers.FirstOrDefault().ДолжностьNavigation.Должность = posID.FirstOrDefault().Должность;
+                сотрудникиrs.FirstOrDefault().ДолжностьNavigation.Должность = posID.FirstOrDefault().Должность;
             }
 
             if (ID == null)
             {
                 return NotFound();
             }
-            if (employeers == null)
+            if (сотрудникиrs == null)
             {
                 return NotFound();
             }
-            return View(employeers.FirstOrDefault());
+            return View(сотрудникиrs.FirstOrDefault());
         }
 
         // GET: Сотрудники/Create
         public IActionResult Create()
         {
-            ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Id");
+            ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Должность");
             return View();
         }
 
@@ -77,31 +77,43 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Фио,Должность,Оклад,Адрес,Телефон")] Сотрудники сотрудники)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(сотрудники);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    SqlParameter Names = new SqlParameter("@Names", сотрудники.Фио);
+                    SqlParameter Position = new SqlParameter("@Position", сотрудники.Должность);
+                    SqlParameter Salary = new SqlParameter("@Salary", сотрудники.Оклад);
+                    SqlParameter Address = new SqlParameter("@Address", сотрудники.Адрес);
+                    SqlParameter Phone = new SqlParameter("@Phone", сотрудники.Телефон);
+
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Employeers @Names, @Position, @Salary, @Address, @Phone", Names, Position, Salary, Address, Phone);
+
+                    return RedirectToAction(nameof(Index));
+                }
+               
+                ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Должность", сотрудники.Должность);
+                return View(сотрудники);
             }
-            ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Должность", сотрудники.Должность);
-            return View(сотрудники);
+            catch (SqlException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // GET: Сотрудники/Edit/5
         public async Task<IActionResult> Edit(byte? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            SqlParameter ID = new SqlParameter("@Id", id);
 
-            var сотрудники = await _context.Сотрудникиs.FindAsync(id);
-            if (сотрудники == null)
+            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", ID).ToListAsync();
+            if (employeers == null)
             {
                 return NotFound();
             }
-            ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Id", сотрудники.Должность);
-            return View(сотрудники);
+            ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Должность", employeers.FirstOrDefault().Должность);
+            return View(employeers.FirstOrDefault());
+           
         }
 
         // POST: Сотрудники/Edit/5
@@ -111,17 +123,21 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Фио,Должность,Оклад,Адрес,Телефон")] Сотрудники сотрудники)
         {
-            if (id != сотрудники.Id)
-            {
-                return NotFound();
-            }
-
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _context.Update(сотрудники);
-                    await _context.SaveChangesAsync();
+                    SqlParameter Id = new SqlParameter("@Id", сотрудники.Id); ; ;
+                    SqlParameter Names = new SqlParameter("@Names", сотрудники.Фио);
+                    SqlParameter Position = new SqlParameter("@Position", сотрудники.Должность);
+                    SqlParameter Salary = new SqlParameter("@Salary", сотрудники.Оклад);
+                    SqlParameter Address = new SqlParameter("@Address", сотрудники.Адрес);
+                    SqlParameter Phone = new SqlParameter("@Phone", сотрудники.Телефон);
+
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Employeers @Id, @Names, @Position, @Salary, @Address, @Phone", Id, Names, Position, Salary, Address, Phone);
+
+                    //_context.Update(employee);
+                    //await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -134,9 +150,13 @@ namespace ToysDB.Controllers
                         throw;
                     }
                 }
+                catch (SqlException ex)
+                {
+                    return NotFound(ex.Message);
+                }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Id", сотрудники.Должность);
+            ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Должность", сотрудники.Должность);
             return View(сотрудники);
         }
 
@@ -147,16 +167,18 @@ namespace ToysDB.Controllers
             {
                 return NotFound();
             }
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var employee = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @Id", Id).ToListAsync();
 
-            var сотрудники = await _context.Сотрудникиs
-                .Include(с => с.ДолжностьNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (сотрудники == null)
+            ViewData["Должность"] = new SelectList(_context.Должностиs, "Id", "Должность", employee.FirstOrDefault().Должность);
+
+
+            if (employee.FirstOrDefault() == null)
             {
                 return NotFound();
             }
 
-            return View(сотрудники);
+            return View(employee.FirstOrDefault());
         }
 
         // POST: Сотрудники/Delete/5
@@ -164,9 +186,8 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
-            var сотрудники = await _context.Сотрудникиs.FindAsync(id);
-            _context.Сотрудникиs.Remove(сотрудники);
-            await _context.SaveChangesAsync();
+            SqlParameter Id = new SqlParameter("@Id", id);
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.Delete_Employeers @Id", Id);
             return RedirectToAction(nameof(Index));
         }
 

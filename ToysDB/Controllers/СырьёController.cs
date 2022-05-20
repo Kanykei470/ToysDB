@@ -70,33 +70,47 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Наименование,ЕдиницаИзмерения,Сумма,Количество")] Сырьё сырьё)
+        public async Task<IActionResult> Create([Bind("Id,Наименование,ЕдиницаИзмерения,Сумма,Количество")] Сырьё rawMaterial)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(сырьё);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    SqlParameter Title = new SqlParameter("@Title", rawMaterial.Наименование);
+                    SqlParameter Unit = new SqlParameter("@Unit", rawMaterial.ЕдиницаИзмерения);
+                    SqlParameter Summa = new SqlParameter("@Summa", rawMaterial.Сумма);
+                    SqlParameter Amount = new SqlParameter("@Amount", rawMaterial.Количество);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Raw_Materials @Title, @Unit, @Summa, @Amount", Title, Unit, Summa, Amount);
+
+                    return RedirectToAction(nameof(Index));
+                }
+                ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование", rawMaterial.ЕдиницаИзмерения);
+
+                return View(rawMaterial);
             }
-            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование", сырьё.ЕдиницаИзмерения);
-            return View(сырьё);
+            catch (SqlException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // GET: Сырьё/Edit/5
         public async Task<IActionResult> Edit(byte? id)
         {
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var dataRawMaterial = await _context.Сырьёs.FromSqlRaw("dbo.selectByIdRawMaterial @Id", Id).ToListAsync();
+
             if (id == null)
             {
                 return NotFound();
             }
 
-            var сырьё = await _context.Сырьёs.FindAsync(id);
-            if (сырьё == null)
+            if (dataRawMaterial.FirstOrDefault() == null)
             {
                 return NotFound();
             }
-            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование", сырьё.ЕдиницаИзмерения);
-            return View(сырьё);
+            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование", dataRawMaterial.FirstOrDefault().ЕдиницаИзмерения);
+            return View(dataRawMaterial);
         }
 
         // POST: Сырьё/Edit/5
@@ -138,20 +152,9 @@ namespace ToysDB.Controllers
         // GET: Сырьё/Delete/5
         public async Task<IActionResult> Delete(byte? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+           //???
 
-            var сырьё = await _context.Сырьёs
-                .Include(с => с.ЕдиницаИзмеренияNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (сырьё == null)
-            {
-                return NotFound();
-            }
-
-            return View(сырьё);
+            return View();
         }
 
         // POST: Сырьё/Delete/5

@@ -70,16 +70,28 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Наименование,ЕдиницаИзмерения,Сумма,Количество")] ГотоваяПродукция готоваяПродукция)
+        public async Task<IActionResult> Create([Bind("Id,Наименование,ЕдиницаИзмерения,Сумма,Количество")] ГотоваяПродукция finishedProduct)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(готоваяПродукция);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    SqlParameter Title = new SqlParameter("@Title", finishedProduct.Наименование);
+                    SqlParameter Unit = new SqlParameter("@Unit", finishedProduct.ЕдиницаИзмерения);
+                    SqlParameter Summa = new SqlParameter("@Summa", finishedProduct.Сумма);
+                    SqlParameter Amount = new SqlParameter("@Amount", finishedProduct.Количество);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Finished_Production @Title, @Unit, @Summa, @Amount", Title, Unit, Summa, Amount);
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование");
+                return View(finishedProduct);
             }
-            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование", готоваяПродукция.ЕдиницаИзмерения);
-            return View(готоваяПродукция);
+            catch (SqlException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // GET: ГотоваяПродукция/Edit/5
@@ -89,14 +101,16 @@ namespace ToysDB.Controllers
             {
                 return NotFound();
             }
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var finishedProduct = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.GetID_Finished_Production @Id", Id).ToListAsync();
 
-            var готоваяПродукция = await _context.ГотоваяПродукцияs.FindAsync(id);
-            if (готоваяПродукция == null)
+            //var finishedProduct = await _context.FinishedProducts.FindAsync(id);
+            if (finishedProduct.FirstOrDefault() == null)
             {
                 return NotFound();
             }
-            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование", готоваяПродукция.ЕдиницаИзмерения);
-            return View(готоваяПродукция);
+            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование");
+            return View(finishedProduct.FirstOrDefault());
         }
 
         // POST: ГотоваяПродукция/Edit/5
@@ -104,9 +118,9 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(byte id, [Bind("Id,Наименование,ЕдиницаИзмерения,Сумма,Количество")] ГотоваяПродукция готоваяПродукция)
+        public async Task<IActionResult> Edit(byte id, [Bind("Id,Наименование,ЕдиницаИзмерения,Сумма,Количество")] ГотоваяПродукция finishedProduct)
         {
-            if (id != готоваяПродукция.Id)
+            if (id != finishedProduct.Id)
             {
                 return NotFound();
             }
@@ -115,12 +129,17 @@ namespace ToysDB.Controllers
             {
                 try
                 {
-                    _context.Update(готоваяПродукция);
-                    await _context.SaveChangesAsync();
+                    SqlParameter Id = new SqlParameter("@Id", finishedProduct.Id);
+                    SqlParameter Title = new SqlParameter("@Title", finishedProduct.Наименование);
+                    SqlParameter Unit = new SqlParameter("@Unit", finishedProduct.ЕдиницаИзмерения);
+                    SqlParameter Summa = new SqlParameter("@Summa", finishedProduct.Сумма);
+                    SqlParameter Amount = new SqlParameter("@Amount", finishedProduct.Количество);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Finished_Production @Id, @Title, @Unit, @Summa, @Amount", Id, Title, Unit, Summa, Amount);
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ГотоваяПродукцияExists(готоваяПродукция.Id))
+                    if (!ГотоваяПродукцияExists(finishedProduct.Id))
                     {
                         return NotFound();
                     }
@@ -129,10 +148,14 @@ namespace ToysDB.Controllers
                         throw;
                     }
                 }
+                catch (SqlException ex)
+                {
+                    return NotFound(ex.Message);
+                }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование", готоваяПродукция.ЕдиницаИзмерения);
-            return View(готоваяПродукция);
+            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование");
+            return View(finishedProduct);
         }
 
         // GET: ГотоваяПродукция/Delete/5
@@ -143,15 +166,12 @@ namespace ToysDB.Controllers
                 return NotFound();
             }
 
-            var готоваяПродукция = await _context.ГотоваяПродукцияs
-                .Include(г => г.ЕдиницаИзмеренияNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (готоваяПродукция == null)
-            {
-                return NotFound();
-            }
+            SqlParameter Id = new SqlParameter("@Id", id);
+            var finishedProduct = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.selectByIdFinishedProduct @Id", Id).ToListAsync();
+            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование");
 
-            return View(готоваяПродукция);
+
+            return View(finishedProduct.FirstOrDefault());
         }
 
         // POST: ГотоваяПродукция/Delete/5
