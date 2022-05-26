@@ -167,7 +167,7 @@ namespace ToysDB.Controllers
             }
 
             SqlParameter Id = new SqlParameter("@Id", id);
-            var finishedProduct = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.selectByIdFinishedProduct @Id", Id).ToListAsync();
+            var finishedProduct = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.GetID_Finished_Production @Id", Id).ToListAsync();
             ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование");
 
 
@@ -179,8 +179,8 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
-            var готоваяПродукция = await _context.ГотоваяПродукцияs.FindAsync(id);
-            _context.ГотоваяПродукцияs.Remove(готоваяПродукция);
+            SqlParameter ID = new SqlParameter("@id", id);
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.Delete_Finished_Production @id", ID);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

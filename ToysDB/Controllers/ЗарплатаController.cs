@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ToysDB.Models;
 using AspNetCoreHero.ToastNotification;
+using Microsoft.Data.SqlClient;
 
 namespace ToysDB.Controllers
 {
@@ -21,181 +22,124 @@ namespace ToysDB.Controllers
 
         // GET: Зарплата
 
-        public void create(string yearString, string monthstring, [Bind("Id,Год,Месяц,Сотрудники,Закуп,Продажа,Производство,Всего,Оклад,Бонус,ОбщаяСуммаКВыдаче,Статус")] Зарплата zp, int sotrId)
+        public async Task<IActionResult> Index(string yearString, string monthString)
         {
-            var emp = _context.Сотрудникиs;
-            var purchase = _context.ЗакупкаСырьяs;
-            var sale = _context.ПродажаПродукцииs;
-            var production = _context.Производствоs;
-            var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
-            int inPurchase, inSale, inProduction;
-
-
-            var sotr = emp.Where(u => u.Id == sotrId).FirstOrDefault();
-            inPurchase = 0;
-            inSale = 0;
-            inProduction = 0;
-
-
-            foreach (var raw in purchase)
-            {
-                if (raw.Сотрудник == sotr.Id && raw.Дата.Year.ToString().Equals(yearString) && raw.Дата.Month.ToString().Equals(monthstring))
+            ViewBag.years = new SelectList(
+                new List<SelectListItem>
                 {
-                    inPurchase++;
-                }
-            }
-            foreach (var salo in sale)
-            {
-                if (salo.Сотрудник == sotr.Id && salo.Дата.Year.ToString().Equals(yearString) && salo.Дата.Month.ToString().Equals(monthstring))
+                    new SelectListItem {Text = "2020", Value = "2020"},
+                    new SelectListItem {Text = "2021", Value = "2021"},
+                    new SelectListItem {Text = "2022", Value = "2022"},
+                    new SelectListItem {Text = "2023", Value = "2023"},
+                    new SelectListItem {Text = "2024", Value = "2024"},
+                    new SelectListItem {Text = "2025", Value = "2025"},
+                }, "Value", "Text");
+
+            ViewBag.months = new SelectList(
+                new List<SelectListItem>
                 {
-                    inSale++;
-                }
-            }
-            foreach (var prod in production)
+                    new SelectListItem {Text = "Январь", Value = "1"},
+                    new SelectListItem {Text = "Февраль", Value = "2"},
+                    new SelectListItem {Text = "Март", Value = "3"},
+                    new SelectListItem {Text = "Апрель", Value = "4"},
+                    new SelectListItem {Text = "Май", Value = "5"},
+                    new SelectListItem {Text = "Июнь", Value = "6"},
+                    new SelectListItem {Text = "Июль", Value = "7"},
+                    new SelectListItem {Text = "Август", Value = "8"},
+                    new SelectListItem {Text = "Сентябрь", Value = "9"},
+                    new SelectListItem {Text = "Октябрь", Value = "10"},
+                    new SelectListItem {Text = "Ноябрь", Value = "11"},
+                    new SelectListItem {Text = "Декабрь", Value = "12"}
+                }, "Value", "Text");
+
+            var months = new List<string>()
             {
-                if (prod.Сотрудник == sotr.Id && prod.Дата.Year.ToString().Equals(yearString) && prod.Дата.Month.ToString().Equals(monthstring))
-                {
-                    inProduction++;
-                }
-            }
-
-            zp.Сотрудники = (byte)sotr.Id;
-            zp.Год = yearString;
-            zp.Месяц = monthstring;
-            zp.Продажа = inSale;
-            zp.Производство = inProduction;
-            zp.Закуп = inPurchase;
-            zp.Всего = inProduction + inPurchase + inSale;
-            zp.Оклад = (decimal)sotr.Оклад;
-            zp.Бонус = (decimal)budget.Бонус * zp.Всего * (zp.Оклад / 100);
-            zp.ОбщаяСуммаКВыдаче = zp.Оклад + zp.Бонус;
-            zp.Статус = false;
-            _context.Add(zp);
-            _context.SaveChanges();
-        }
-
-
-        public async Task<IActionResult> paySalary(string yearString, string monthString)
-        {
-            var EmpList = from s in _context.Зарплатаs.Include(з => з.СотрудникиNavigation)
-                          select s;
-            EmpList = EmpList.Where(s => s.Год == yearString && s.Месяц == monthString);
-
-            var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
-            decimal totalSalary = 0;
-
-            foreach (var emp in EmpList)
+                "Январь", "Февраль",
+                "Март","Апрель","Май","Июнь","Июль","Август",
+                "Сентябрь","Октябрь","Ноябрь","Декабрь"
+            };
+            List<Зарплата> SalaryList;
+            if (!String.IsNullOrEmpty(yearString) && !String.IsNullOrEmpty(monthString))
             {
-                if (emp.Статус == false)
-                {
-                    totalSalary += emp.ОбщаяСуммаКВыдаче;
-                }
-            }
-
-            if (totalSalary > budget.Сумма)
-            {
-                return NotFound("Не хватает денег!");
+                SqlParameter year = new SqlParameter("@y", Convert.ToInt32(yearString));
+                SqlParameter month = new SqlParameter("@m", Convert.ToInt32(monthString));
+                SalaryList = await _context.Зарплатаs.FromSqlRaw("exec dbo.[SP_Salary]  @y,@m", year, month).ToListAsync();
             }
             else
             {
-                foreach (var emp in EmpList)
-                {
-                    if (emp.Статус == false)
-                    {
-                        emp.Статус = true;
-                    }
-                }
-
-                budget.Сумма -= totalSalary;
+                SalaryList = await _context.Зарплатаs.FromSqlRaw("dbo.Get_Salary").ToListAsync();
             }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(IndexAsync));
-        }
-
-        public async Task<IActionResult> IndexAsync()
-        {
-            ViewBag.years = new SelectList(
-                    new List<SelectListItem>
-                    {
-                new SelectListItem {Text = "2020", Value = "2020"},
-                new SelectListItem {Text = "2021", Value = "2021"},
-                new SelectListItem {Text = "2022", Value = "2022"},
-                new SelectListItem {Text = "2023", Value = "2023"},
-                new SelectListItem {Text = "2024", Value = "2024"},
-                new SelectListItem {Text = "2025", Value = "2025"},
-                    }, "Value", "Text");
-
-            ViewBag.months = new SelectList(
-        new List<SelectListItem>
-        {
-                new SelectListItem {Text = "Январь", Value = "1"},
-                new SelectListItem {Text = "Февраль", Value = "2"},
-                new SelectListItem {Text = "Март", Value = "3"},
-                new SelectListItem {Text = "Апрель", Value = "4"},
-                new SelectListItem {Text = "Май", Value = "5"},
-                new SelectListItem {Text = "Июнь", Value = "6"},
-                new SelectListItem {Text = "Июль", Value = "7"},
-                new SelectListItem {Text = "Август", Value = "8"},
-                new SelectListItem {Text = "Сентябрь", Value = "9"},
-                new SelectListItem {Text = "Октябрь", Value = "10"},
-                new SelectListItem {Text = "Ноябрь", Value = "11"},
-                new SelectListItem {Text = "Декабрь", Value = "12"}
-        }, "Value", "Text");
+            var workerList = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
 
 
-
-            //    var EmpList = from s in _context.Зарплатаs.Include(з => з.СотрудникиNavigation)
-            //                  select s;
-
-            //    if (!String.IsNullOrEmpty(yearString) && !String.IsNullOrEmpty(monthstring))
-            //    {
-            //        EmpList = EmpList.Where(s => s.Год == yearString && s.Месяц == monthstring);
-            //        int countOfEmp = 0;
-            //        foreach (var item in EmpList)
-            //        {
-            //            countOfEmp++;
-            //            if (countOfEmp == 1) break;
-            //        }
-
-            //        if (countOfEmp == 0)
-            //        {
-            //            var emp = _context.Сотрудникиs;
-            //            List<byte> EmpIdList = new List<byte>();
-
-            //            foreach (var sotr in emp)
-            //            {
-            //                EmpIdList.Add((byte)sotr.Id);
-
-            //            }
-            //            for (int i = 0; i < EmpIdList.Count(); i++)
-            //            {
-            //                int sotrId = EmpIdList[i];
-            //                Зарплата зарплата = new Зарплата();
-            //                create(yearString, monthstring, зарплата, sotrId);
-            //            }
-            //        }
-            //        return View(EmpList.ToList());
-            //    }
-            //    else
-            //    {
-            var employeers = await _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToListAsync();
-            var salary = await _context.Зарплатаs.FromSqlRaw("dbo.Get_Salary").ToListAsync();
-            foreach (var sl in salary)
+            foreach (var Зарплата in SalaryList)
             {
-                foreach (var emp in employeers)
+                foreach (var worker in workerList)
                 {
-                    if (sl.Сотрудники == emp.Id)
+                    if (Зарплата.Сотрудники == worker.Id)
                     {
-                        sl.СотрудникиNavigation.Фио = emp.Фио;
+                        Зарплата.СотрудникиNavigation.Фио = worker.Фио;
                     }
                 }
-
             }
-            return View(salary);
-            //    }
-            //}
+            var total = 0.0m;
+            foreach (var item in SalaryList)
+            {
+                total += item.ОбщаяСуммаКВыдаче;
+            };
+            ViewBag.totalSumAll = total;
+            foreach (var item in SalaryList)
+            {
+                item.Месяц = months[Convert.ToInt32(item.Месяц) - 1];
+            }
+            return View(SalaryList);
         }
+
+        // GET: Salaries/Details/5
+        public async Task<IActionResult> Details(short? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var Зарплата = await _context.Зарплатаs
+                .Include(s => s.СотрудникиNavigation)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (Зарплата == null)
+            {
+                return NotFound();
+            }
+
+            return View(Зарплата);
+        }
+
+        public async Task<IActionResult> payЗарплата(string yearString, string monthString)
+        {
+            var parameterReturn = new SqlParameter
+            {
+                ParameterName = "p",
+                SqlDbType = System.Data.SqlDbType.Int,
+                Direction = System.Data.ParameterDirection.Output,
+            };
+
+
+            SqlParameter year = new SqlParameter("@y", Convert.ToInt32(yearString));
+            SqlParameter month = new SqlParameter("@m", Convert.ToInt32(monthString));
+            _context.Database.ExecuteSqlRaw("exec  @p =  dbo.[SP_Pay_Зарплата]  @y,@m", year, month, parameterReturn);
+            int returnValue = (int)parameterReturn.Value;
+
+            if (returnValue == 1)
+            {
+                return NotFound("Don't have enough money in budget");
+            }
+            else
+            {
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index", new { yearString, monthString });
+            }
+        }
+
+        
     }
-}
-    
+}    

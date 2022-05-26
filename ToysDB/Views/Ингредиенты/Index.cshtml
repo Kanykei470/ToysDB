@@ -1,4 +1,4 @@
-﻿@model ToysDB.ViewModels.ИнгViewModel
+﻿@model IEnumerable<ToysDB.Models.Ингредиенты>
 
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <!-- links of Bootstrap 4 JavaScript -->
@@ -8,6 +8,8 @@
     </script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js">
     </script>
+       <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/1.css" />
 
 
 
@@ -21,16 +23,26 @@
      <a asp-action="Create" class = "btn btn-outline-primary">Создать новую запись</a>
      <form method="get">
             <label class="control-label">Готовая Продукция: </label>
-            <select asp-items="Model.ГотовыйПродукт" name="finprod" value="@Model.ВыбранныйПродукт" class="form-control"></select>
-            <input type="submit" value="Фильтр" class="btn btn-outline-warning" />
+            
  </form> 
 </div>
+
+@using (Html.BeginForm())
+{
+    <p>
+
+        @Html.DropDownList("searchString", ViewBag.Prod as SelectList, "все")
+
+        <input type="submit" value="Фильтр" 
+       class="btn btn-outline-secondary" />
+    </p>
+}
 
 
 
 <table class="table table-striped table-dark"> 
     <thead>
-        <tr>
+        <tr> 
             <th>
                 @Html.DisplayName("Сырье")
             </th>
@@ -42,7 +54,7 @@
     </thead>
    <tbody id="tableDetails">
 
-@foreach (var item in Model.Ингредиенты) {
+@foreach (var item in Model) {
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.СырьеNavigation.Наименование)

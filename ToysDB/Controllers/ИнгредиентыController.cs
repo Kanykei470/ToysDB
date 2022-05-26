@@ -20,48 +20,42 @@ namespace ToysDB.Controllers
             _context = context;
         }
 
+        
         // GET: Ингредиенты
-        public async Task<IActionResult> Index(
-            //int? finprod, string name
-            )
+        public async Task<IActionResult> Index(string searchString)
         {
-            //IQueryable<Ингредиенты> Ингредиенты = _context.Ингредиентыs.Include(p => p.ПродукцияNavigation).Include(u => u.СырьеNavigation);
-            //if (finprod != null && finprod != 0)
-            //{
-            //    Ингредиенты = Ингредиенты.Where(p => p.ПродукцияNavigation.Id == finprod);
-            //}
 
-            //List<ГотоваяПродукция> ГотоваяПродукция = await _context.ГотоваяПродукцияs.ToListAsync();
+            ViewBag.Prod = new SelectList(_context.ГотоваяПродукцияs, "Наименование", "Наименование");
 
-            //ГотоваяПродукция.Insert(0, new ГотоваяПродукция { Наименование = "Все", Id = 0 });
+            var ingrList = await _context.Ингредиентыs.FromSqlRaw("dbo.Get_Ingredients").ToListAsync();
+            var productList = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.Get_Finished_Production").ToListAsync();
+            var rawList = await _context.Сырьёs.FromSqlRaw("dbo.Get_Raw_Materials").ToListAsync();
 
-            //ИнгViewModel ingridientsViewModel = new ИнгViewModel
-            //{
-            //    Ингредиенты = Ингредиенты,
-            //    ГотовыйПродукт = new SelectList(ГотоваяПродукция, "Id", "Наименование"),
-            //    Наименование = name,
-            //    ВыбранныйПродукт = finprod
-            //};
-            //if (finprod.HasValue)
-            //{
-            //    var itemToSelect = ingridientsViewModel.ГотовыйПродукт.FirstOrDefault(x => x.Value == finprod.Value.ToString());
-            //    itemToSelect.Selected = true;
-            //}
-
-            var rawMaterials = await _context.Сырьёs.FromSqlRaw("dbo.Get_Raw_Materials").ToListAsync();
-            var ingridients = await _context.Ингредиентыs.FromSqlRaw("dbo.Get_Ingredients").ToListAsync();
-
-            foreach (var ing in ingridients)
+            if (!String.IsNullOrEmpty(searchString) && searchString != "все")
             {
-                foreach (var raw in rawMaterials)
+                SqlParameter Product = new SqlParameter("@product", searchString);
+                ingrList = await _context.Ингредиентыs.FromSqlRaw("dbo.getIngrForProduct @product", Product).ToListAsync();
+            }
+            foreach (var ingr in ingrList)
+            {
+                foreach (var product in productList)
                 {
-                    if (ing.Сырье == raw.Id)
+                    if (ingr.Продукция == product.Id)
                     {
-                       ing.СырьеNavigation.Наименование=raw.Наименование;
+                        ingr.ПродукцияNavigation.Наименование = product.Наименование;
+                    }
+                }
+                foreach (var raw in rawList)
+                {
+                    if (ingr.Сырье == raw.Id)
+                    {
+                        ingr.СырьеNavigation.Наименование = raw.Наименование;
                     }
                 }
             }
-            return View(ingridients);
+
+
+            return View(ingrList);
         }
 
         // GET: Ингредиенты/Details/5

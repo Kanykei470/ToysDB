@@ -81,8 +81,10 @@ namespace ToysDB.Controllers
         // GET: ЗакупкаСырья/Create
         public IActionResult Create()
         {
-            ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио");
-            ViewData["Сырьё"] = new SelectList(_context.Сырьёs, "Id", "Наименование");
+            var rawList = _context.Сырьёs.FromSqlRaw("dbo.Get_Raw_Materials").ToList();
+            var workerList = _context.Сотрудникиs.FromSqlRaw("dbo.Get_Employeers").ToList();
+            ViewData["Сырьё"] = new SelectList(rawList, "Id", "Наименование");
+            ViewData["Сотрудник"] = new SelectList(workerList, "Id", "Фио");
             return View();
         }
 
@@ -92,32 +94,39 @@ namespace ToysDB.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
 
-        public async Task<IActionResult> Create([Bind("Id,Сырьё,Количество,Сумма,Дата,Сотрудник")] ЗакупкаСырья закупкаСырья)
+        public async Task<IActionResult> Create([Bind("Id,Сырьё,Количество,Сумма,Дата,Сотрудник")] ЗакупкаСырья rawMaterialPurchase)
         {
-            var buget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
-            var raw = _context.Сырьёs.Where(u => u.Id == закупкаСырья.Сырьё).FirstOrDefault();
             if (ModelState.IsValid)
             {
-                if (buget.Сумма < закупкаСырья.Сумма)
+                var parameterReturn = new SqlParameter
                 {
-                    ModelState.AddModelError("Сумма", "У вас недостаточно бюджета!");
-                    
-                }
-                else 
+                    ParameterName = "p",
+                    SqlDbType = System.Data.SqlDbType.Int,
+                    Direction = System.Data.ParameterDirection.Output,
+                };
+
+                SqlParameter SumCheck = new SqlParameter("@sum", rawMaterialPurchase.Сумма);
+                _context.Database.ExecuteSqlRaw("exec  @p =  dbo.[SP_Purchase]  @sum", SumCheck, parameterReturn);
+                int returnValue = (int)parameterReturn.Value;
+
+                if (returnValue == 0)
                 {
-                    buget.Сумма = buget.Сумма - закупкаСырья.Сумма;
-                    raw.Количество = (short?)(raw.Количество + закупкаСырья.Количество);
-                    raw.Сумма = raw.Сумма + закупкаСырья.Сумма;
-                    _context.Add(закупкаСырья);
-                    await _context.SaveChangesAsync();
+                    SqlParameter RawMaterial = new SqlParameter("@rawMaterial", rawMaterialPurchase.Сырьё);
+                    SqlParameter Quantity = new SqlParameter("@quantity", rawMaterialPurchase.Количество);
+                    SqlParameter Sum = new SqlParameter("@sum", rawMaterialPurchase.Сумма);
+                    SqlParameter Date = new SqlParameter("@date", rawMaterialPurchase.Дата);
+                    SqlParameter Worker = new SqlParameter("@worker", rawMaterialPurchase.Сотрудник);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Purchase_Of_Raw_Materials @rawMaterial, @quantity, @sum, @date, @worker", RawMaterial, Quantity, Sum, Date, Worker);
                     return RedirectToAction(nameof(Index));
                 }
-               
+                else
+                {
+                    ModelState.AddModelError("Сумма", "Недостаточно бюджета!");
+                }
             }
-            ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", закупкаСырья.Сотрудник);
-            ViewData["Сырьё"] = new SelectList(_context.Сырьёs, "Id", "Наименование", закупкаСырья.Сырьё);
-            return View(закупкаСырья);
-            _notyf.Success("Запись успешно создана.");
+            ViewData["RawMaterial"] = new SelectList(_context.Сырьёs, "Id", "Name", rawMaterialPurchase.Сырьё);
+            ViewData["Worker"] = new SelectList(_context.Сотрудникиs, "Id", "Fio", rawMaterialPurchase.Сотрудник);
+            return View(rawMaterialPurchase);
         }
 
         // GET: ЗакупкаСырья/Edit/5
@@ -144,43 +153,39 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Сырьё,Количество,Сумма,Дата,Сотрудник")] ЗакупкаСырья закупкаСырья)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Сырьё,Количество,Сумма,Дата,Сотрудник")] ЗакупкаСырья rawMaterialPurchase)
         {
-            if (id != закупкаСырья.Id)
+            if (id != rawMaterialPurchase.Id)
             {
                 return NotFound();
             }
-
-            var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
-            var raw = _context.Сырьёs.Where(u => u.Id == закупкаСырья.Сырьё).FirstOrDefault();
-            var deleted = _context.ЗакупкаСырьяs.Where(u => u.Id == закупкаСырья.Id).FirstOrDefault();
-
-            if (ModelState.IsValid)
+            var parameterReturn = new SqlParameter
             {
-                if (budget.Сумма + deleted.Сумма < закупкаСырья.Сумма)
+                ParameterName = "p",
+                SqlDbType = System.Data.SqlDbType.Int,
+                Direction = System.Data.ParameterDirection.Output,
+            };
+            SqlParameter Id = new SqlParameter("@Id", rawMaterialPurchase.Id);
+            SqlParameter Sum = new SqlParameter("@sum", rawMaterialPurchase.Сумма);
+            _context.Database.ExecuteSqlRaw("exec @p = dbo.[updateCheck_rawMaterialPurchase] @Id, @Sum", Id, Sum, parameterReturn);
+            int returnValue = (int)parameterReturn.Value;
+            if (returnValue == 0)
+            {
+                if (ModelState.IsValid)
                 {
-
-                    ModelState.AddModelError("Сумма", "У вас недостаточно бюджета!");
-                }
-                else
-                {
-                    budget.Сумма += deleted.Сумма;
-                    budget.Сумма -= закупкаСырья.Сумма;
-                    raw.Количество -= deleted.Количество;
-                    raw.Количество += закупкаСырья.Количество;
-                    raw.Сумма -= deleted.Сумма;
-                    raw.Сумма += закупкаСырья.Сумма;
-
                     try
                     {
-                        _context.Remove(deleted);
-                        _context.Update(закупкаСырья);
-                        await _context.SaveChangesAsync();
-
+                        SqlParameter Id1 = new SqlParameter("@Id", rawMaterialPurchase.Id);
+                        SqlParameter RawMaterial = new SqlParameter("@RawMaterial", rawMaterialPurchase.Сырьё);
+                        SqlParameter Quantity = new SqlParameter("@quantity", rawMaterialPurchase.Количество);
+                        SqlParameter Sum1 = new SqlParameter("@sum", rawMaterialPurchase.Сумма);
+                        SqlParameter Date = new SqlParameter("@date", rawMaterialPurchase.Дата);
+                        SqlParameter Worker = new SqlParameter("@worker", rawMaterialPurchase.Сотрудник);
+                        await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Purchase_Of_Raw_Materials @Id,@RawMaterial,@Quantity, @Sum, @Date,@Worker", Id1, RawMaterial, Quantity, Sum1, Date, Worker);
                     }
                     catch (DbUpdateConcurrencyException)
                     {
-                        if (!ЗакупкаСырьяExists(закупкаСырья.Id))
+                        if (!ЗакупкаСырьяExists(rawMaterialPurchase.Id))
                         {
                             return NotFound();
                         }
@@ -192,34 +197,41 @@ namespace ToysDB.Controllers
                     return RedirectToAction(nameof(Index));
                 }
             }
-            ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", закупкаСырья.Сотрудник);
-            ViewData["Сырьё"] = new SelectList(_context.Сырьёs, "Id", "Наименование", закупкаСырья.Сырьё);
-            return View(закупкаСырья);
+            else if (returnValue == 1)
+            {
+                ModelState.AddModelError("Сумма", "Недостаточно бюджета!");
+            }
+            ViewData["RawMaterial"] = new SelectList(_context.Сырьёs, "Id", "Name", rawMaterialPurchase.Сырьё);
+            ViewData["Worker"] = new SelectList(_context.Сотрудникиs, "Id", "Fio", rawMaterialPurchase.Сотрудник);
+            return View(rawMaterialPurchase);
         }
 
 
         // GET: ЗакупкаСырья/Delete/5
         public async Task<IActionResult> Delete(byte? id)
         {
-            
             if (id == null)
             {
                 return NotFound();
             }
 
-            var закупкаСырья = await _context.ЗакупкаСырьяs
-                .Include(з => з.СотрудникNavigation)
-                .Include(з => з.СырьёNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            SqlParameter ID = new SqlParameter("@Id", id);
+            var rawMaterialPurchase = await _context.ЗакупкаСырьяs.FromSqlRaw("dbo.GetID_Purchase_Of_Raw_Materials @id", ID).ToListAsync();
+            SqlParameter workerID = new SqlParameter("@Id", rawMaterialPurchase.FirstOrDefault().Сотрудник);
+            var worker = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", workerID).ToListAsync();
+            SqlParameter rawID = new SqlParameter("@Id", rawMaterialPurchase.FirstOrDefault().Сырьё);
+            var rawMaterials = await _context.Сырьёs.FromSqlRaw("dbo.GetID_Raw_Materials @id", rawID).ToListAsync();
 
-           
-
-            if (закупкаСырья == null)
+            if (rawMaterialPurchase.FirstOrDefault().Сотрудник == worker.FirstOrDefault().Id)
+                rawMaterialPurchase.FirstOrDefault().СотрудникNavigation.Фио = worker.FirstOrDefault().Фио;
+            if (rawMaterialPurchase.FirstOrDefault().Сырьё == rawMaterials.FirstOrDefault().Id)
+                rawMaterialPurchase.FirstOrDefault().СырьёNavigation.Наименование = rawMaterials.FirstOrDefault().Наименование;
+            if (rawMaterialPurchase.FirstOrDefault() == null)
             {
                 return NotFound();
             }
 
-            return View(закупкаСырья);
+            return View(rawMaterialPurchase.FirstOrDefault());
         }
 
         // POST: ЗакупкаСырья/Delete/5
@@ -227,19 +239,12 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
-            var budget = _context.Бюджетs.Where(u => u.Id == 1).FirstOrDefault();
-
-            var закупкаСырья = await _context.ЗакупкаСырьяs.FindAsync(id);
-
-            var raw = _context.Сырьёs.Where(u => u.Id == закупкаСырья.Сырьё).FirstOrDefault();
-            budget.Сумма += закупкаСырья.Сумма;
-            raw.Количество -= закупкаСырья.Количество;
-            raw.Сумма -= закупкаСырья.Сумма;
-
-            _context.ЗакупкаСырьяs.Remove(закупкаСырья);
+            SqlParameter ID = new SqlParameter("@id", id);
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.Delete_Purchase_Of_Raw_Materials @id", ID);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+
 
         private bool ЗакупкаСырьяExists(byte id)
         {

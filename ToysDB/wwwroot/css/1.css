@@ -1,11 +1,13 @@
-﻿header {
+﻿body.* {
+    background-color: #1A1A40 !important;
+}
+
+header {
     background-color: #FFE400;
 }
 
-
-
-body {
-    background: #1A1A40;
+tbody {
+    background-color: #1A1A40;
 }
 
 h1 {
@@ -38,6 +40,7 @@ dt {
 label {
     color: #ffff;
 }
+
 li {
     color: #FF4C29;
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; /* Семейство шрифтов */
