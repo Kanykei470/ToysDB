@@ -97,32 +97,34 @@ namespace ToysDB.Controllers
         {
             if (ModelState.IsValid)
             {
-                var parameterReturn = new SqlParameter
+                SqlParameter Product = new SqlParameter("@product", продажаПродукции.Продукция);
+                SqlParameter Amount = new SqlParameter("@amount", продажаПродукции.Количество);
+                SqlParameter Sum = new SqlParameter("@sum", продажаПродукции.Сумма);
+                SqlParameter Date = new SqlParameter("@date", продажаПродукции.Дата);
+                SqlParameter Emp = new SqlParameter("@emp", продажаПродукции.Сотрудник);
+                var outParam = new SqlParameter
                 {
-                    ParameterName = "p",
-                    SqlDbType = System.Data.SqlDbType.Int,
-                    Direction = System.Data.ParameterDirection.Output,
+                    ParameterName = "@r",
+                    DbType = System.Data.DbType.Int32,
+                    Size = 100,
+                    Direction = System.Data.ParameterDirection.Output
                 };
 
-                SqlParameter Id = new SqlParameter("@id", продажаПродукции.Id);
-                SqlParameter SumCheck = new SqlParameter("@quantity", продажаПродукции.Количество);
-                _context.Database.ExecuteSqlRaw("exec @p=dbo.[SP_SaleProds] @id, @quantity", Id, SumCheck, parameterReturn);
-                int returnValue = (int)parameterReturn.Value;
+                await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Sale_Of_Products @product, @amount, @sum, @date, @emp, @r OUT", Product, Amount, Sum, Date, Emp, outParam);
 
-                if (returnValue == 0)
-                {
-                    SqlParameter RawMaterial = new SqlParameter("@rawMaterial", продажаПродукции.Продукция);
-                    SqlParameter Quantity = new SqlParameter("@quantity", продажаПродукции.Количество);
-                    SqlParameter Sum = new SqlParameter("@sum", продажаПродукции.Сумма);
-                    SqlParameter Date = new SqlParameter("@date", продажаПродукции.Дата);
-                    SqlParameter Worker = new SqlParameter("@worker", продажаПродукции.Сотрудник);
-                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Sale_Of_Products @rawMaterial, @quantity, @sum, @date, @worker", RawMaterial, Quantity, Sum, Date, Worker);
-                    return RedirectToAction(nameof(Index));
-                }
-                else
+                if (outParam.SqlValue.ToString() == "0")
                 {
                     ModelState.AddModelError("Количество", "Недостаточно готовой продукции!");
                 }
+                else if (outParam.SqlValue.ToString() == "2")
+                {
+                    ModelState.AddModelError("Сумма", "Сумма не может быть ниже себестоимости!");
+                }
+                else
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
             }
             ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", продажаПродукции.Продукция);
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", продажаПродукции.Сотрудник);
@@ -138,14 +140,15 @@ namespace ToysDB.Controllers
                 return NotFound();
             }
 
-            var продажаПродукции = await _context.ПродажаПродукцииs.FindAsync(id);
+            SqlParameter Id = new SqlParameter("@id", id);
+            var продажаПродукции = await _context.ПродажаПродукцииs.FromSqlRaw("dbo.GetID_Sale_Of_Products @id", Id).ToListAsync();
             if (продажаПродукции == null)
             {
                 return NotFound();
             }
-            ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", продажаПродукции.Продукция);
-            ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", продажаПродукции.Сотрудник);
-            return View(продажаПродукции);
+            ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", продажаПродукции.FirstOrDefault().Продукция);
+            ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", продажаПродукции.FirstOrDefault().Сотрудник);
+            return View(продажаПродукции.FirstOrDefault());
         }
 
         // POST: ПродажаПродукции/Edit/5
@@ -155,55 +158,45 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(byte id, [Bind("Id,Продукция,Количество,Сумма,Дата,Сотрудник")] ПродажаПродукции продажаПродукции)
         {
-
-
             if (id != продажаПродукции.Id)
             {
                 return NotFound();
             }
-            var parameterReturn = new SqlParameter
+
+            if (ModelState.IsValid)
             {
-                ParameterName = "p",
-                SqlDbType = System.Data.SqlDbType.Int,
-                Direction = System.Data.ParameterDirection.Output,
-            };
-            SqlParameter Id = new SqlParameter("@Id", продажаПродукции.Id);
-            SqlParameter Sum = new SqlParameter("@quantity", продажаПродукции.Количество);
-            _context.Database.ExecuteSqlRaw("exec @p = dbo.[SP_SaleProds] @Id, @quantity", Id, Sum, parameterReturn);
-            int returnValue = (int)parameterReturn.Value;
-            if (returnValue == 0)
-            {
-                if (ModelState.IsValid)
+                SqlParameter Id = new SqlParameter("@id", id);
+                var curSale = await _context.ПродажаПродукцииs.FromSqlRaw("dbo.GetID_Sale_Of_Products @id", Id).ToListAsync();
+
+                SqlParameter Product = new SqlParameter("@product", продажаПродукции.Продукция);
+                SqlParameter Amount = new SqlParameter("@amount", продажаПродукции.Количество);
+                SqlParameter Sum = new SqlParameter("@sum", продажаПродукции.Сумма);
+                SqlParameter Date = new SqlParameter("@date", продажаПродукции.Дата);
+                SqlParameter Emp = new SqlParameter("@emp", продажаПродукции.Сотрудник);
+                SqlParameter CurAmount = new SqlParameter("@curamount", curSale.FirstOrDefault().Количество);
+                var outParam = new SqlParameter
                 {
-                    try
-                    {
-                        SqlParameter Id1 = new SqlParameter("@Id", продажаПродукции.Id);
-                        SqlParameter RawMaterial = new SqlParameter("@RawMaterial", продажаПродукции.Продукция);
-                        SqlParameter Quantity = new SqlParameter("@quantity", продажаПродукции.Количество);
-                        SqlParameter Sum1 = new SqlParameter("@sum", продажаПродукции.Сумма);
-                        SqlParameter Date = new SqlParameter("@date", продажаПродукции.Дата);
-                        SqlParameter Worker = new SqlParameter("@worker", продажаПродукции.Сотрудник);
-                        await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Sale_Of_Products @Id,@RawMaterial,@Quantity, @Sum, @Date,@Worker", Id1, RawMaterial, Quantity, Sum1, Date, Worker);
-                    }
-                    catch (DbUpdateConcurrencyException)
-                    {
-                        if (!ПродажаПродукцииExists(продажаПродукции.Id))
-                        {
-                            return NotFound();
-                        }
-                        else
-                        {
-                            throw;
-                        }
-                    }
+                    ParameterName = "@r",
+                    DbType = System.Data.DbType.Int32,
+                    Size = 100,
+                    Direction = System.Data.ParameterDirection.Output
+                };
+
+                await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Sale_Of_Products @id, @product, @amount, @sum, @date, @emp, @curamount, @r OUT", Id, Product, Amount, Sum, Date, Emp, CurAmount, outParam);
+
+                if (outParam.SqlValue.ToString() == "0")
+                {
+                    ModelState.AddModelError("Количество", "Недостаточно готовой продукции!");
+                }
+                else if (outParam.SqlValue.ToString() == "2")
+                {
+                    ModelState.AddModelError("Сумма", "Сумма не может быть ниже себестоимости!");
+                }
+                else
+                {
                     return RedirectToAction(nameof(Index));
                 }
             }
-            else if (returnValue == 1)
-            {
-                 ModelState.AddModelError("Количество", "Недостаточно готовой продукции!");
-            }
-            
             ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", продажаПродукции.Продукция);
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", продажаПродукции.Сотрудник);
             return View(продажаПродукции);
@@ -218,22 +211,29 @@ namespace ToysDB.Controllers
                 return NotFound();
             }
 
-            SqlParameter ID = new SqlParameter("@Id", id);
-            var production = await _context.ЗакупкаСырьяs.FromSqlRaw("dbo.GetID_Purchase_Of_Raw_Materials @id", ID).ToListAsync();
-            SqlParameter workerID = new SqlParameter("@Id", production.FirstOrDefault().Сотрудник);
-            var worker = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", workerID).ToListAsync();
-            SqlParameter rawID = new SqlParameter("@Id", production.FirstOrDefault().Сырьё);
-            var rawMaterials = await _context.Сырьёs.FromSqlRaw("dbo.GetID_Raw_Materials @id", rawID).ToListAsync();
+            SqlParameter Id = new SqlParameter("@id", id);
 
-            if (production.FirstOrDefault().Сотрудник == worker.FirstOrDefault().Id)
-                production.FirstOrDefault().СотрудникNavigation.Фио = worker.FirstOrDefault().Фио;
-            if (production.FirstOrDefault().Сырьё == rawMaterials.FirstOrDefault().Id)
-                production.FirstOrDefault().СырьёNavigation.Наименование = rawMaterials.FirstOrDefault().Наименование;
-            if (production.FirstOrDefault() == null)
+            var продажаПродукции = await _context.ПродажаПродукцииs.FromSqlRaw("dbo.GetID_Sale_Of_Products @id", Id).ToListAsync();
+
+            SqlParameter prodId = new SqlParameter("@id", продажаПродукции.FirstOrDefault().Продукция);
+
+            var prodList = await _context.ГотоваяПродукцияs.FromSqlRaw("dbo.GetID_Finished_Production @id", prodId).ToListAsync();
+
+            SqlParameter empId = new SqlParameter("@id", продажаПродукции.FirstOrDefault().Сотрудник);
+
+            var empList = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", empId).ToListAsync();
+
+            if (продажаПродукции.FirstOrDefault().Продукция == prodList.FirstOrDefault().Id)
+                продажаПродукции.FirstOrDefault().ПродукцияNavigation.Наименование = prodList.FirstOrDefault().Наименование;
+            if (продажаПродукции.FirstOrDefault().Сотрудник == empList.FirstOrDefault().Id)
+                продажаПродукции.FirstOrDefault().СотрудникNavigation.Фио = empList.FirstOrDefault().Фио;
+
+            if (продажаПродукции == null)
             {
                 return NotFound();
             }
-            return View(production);
+
+            return View(продажаПродукции.FirstOrDefault());
         }
 
         // POST: ПродажаПродукции/Delete/5

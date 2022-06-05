@@ -57,9 +57,12 @@ namespace ToysDB.Controllers
                 if (ModelState.IsValid)
                 {
                     SqlParameter Position = new SqlParameter("@Должность", должности.Должность);
+
                     await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Positions @Должность", Position);
+
                     return RedirectToAction(nameof(Index));
                 }
+
                 return View(должности);
             }
             catch (SqlException ex)
@@ -104,7 +107,7 @@ namespace ToysDB.Controllers
                 {
                     SqlParameter Id = new SqlParameter("@Id", должности.Id);
                     SqlParameter Position = new SqlParameter("@Должность", должности.Должность);
-                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Position @Id, @Должность", Id, Position);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Positions @Id, @Должность", Id, Position);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -134,8 +137,8 @@ namespace ToysDB.Controllers
                 return NotFound();
             }
 
-            SqlParameter Id = new SqlParameter("@Id", id);
-            var post = await _context.Должностиs.FromSqlRaw("dbo.Delete_Positions @Id", Id).ToListAsync();
+            SqlParameter Id = new SqlParameter("@ID", id);
+            var post = await _context.Должностиs.FromSqlRaw("dbo.GetID_Positions @ID", Id).ToListAsync();
 
             if (post.FirstOrDefault() == null)
             {

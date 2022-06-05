@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 using ToysDB.Models;
 
 namespace ToysDB.Controllers
@@ -43,24 +41,24 @@ namespace ToysDB.Controllers
         {
             //Должность
             SqlParameter ID = new SqlParameter("@Id", id);
-            var сотрудникиrs = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @id", ID).ToListAsync();
-            SqlParameter pos = new SqlParameter("@Id", сотрудникиrs.FirstOrDefault().Должность);
-            var posID = await _context.Должностиs.FromSqlRaw("dbo.GetID_Positions @id", pos).ToListAsync();
+            var сотрудникиs = await _context.Сотрудникиs.FromSqlRaw("dbo.GetID_Employeers @Id", ID).ToListAsync();
+            SqlParameter pos = new SqlParameter("@Id", сотрудникиs.FirstOrDefault().Должность);
+            var posID = await _context.Должностиs.FromSqlRaw("dbo.GetID_Positions @Id", pos).ToListAsync();
 
-            if (сотрудникиrs.FirstOrDefault().Должность == posID.FirstOrDefault().Id)
+            if (сотрудникиs.FirstOrDefault().Должность == posID.FirstOrDefault().Id)
             {
-                сотрудникиrs.FirstOrDefault().ДолжностьNavigation.Должность = posID.FirstOrDefault().Должность;
+                сотрудникиs.FirstOrDefault().ДолжностьNavigation.Должность = posID.FirstOrDefault().Должность;
             }
 
             if (ID == null)
             {
                 return NotFound();
             }
-            if (сотрудникиrs == null)
+            if (сотрудникиs == null)
             {
                 return NotFound();
             }
-            return View(сотрудникиrs.FirstOrDefault());
+            return View(сотрудникиs.FirstOrDefault());
         }
 
         // GET: Сотрудники/Create

@@ -49,7 +49,7 @@ namespace ToysDB.Controllers
         }
 
         // GET: Производство/Details/5
-        public async Task<IActionResult> Details(string id)
+        public async Task<IActionResult> Details(int? id)
         {
             //Продукция и Сотрудник
             SqlParameter ID = new SqlParameter("@Id", id);
@@ -91,80 +91,31 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Продукция,Количество,Дата,Сотрудник")] Производство производство)
         {
-            
-            ToysContext db = new ToysContext();
-            List<Ингредиенты> ingredients = new List<Ингредиенты>();
-            List<Сырьё> rawMaterials = new List<Сырьё>();
-
-            ingredients = ((from col in _context.Ингредиентыs
-                            where col.Продукция == производство.Продукция
-                            select col).ToList());
-
-            foreach (var item in ingredients)
+            if (ModelState.IsValid)
             {
-                rawMaterials.Add((from ing in _context.Сырьёs
-                                  where ing.Id == item.Сырье
-                                  select ing).First());
-            }
-
-            bool isNotEnogh = false;
-            foreach (var rawM in rawMaterials)
-            {
-                foreach (var ingred in ingredients)
+                SqlParameter Product = new SqlParameter("@product", производство.Продукция);
+                SqlParameter Amount = new SqlParameter("@amount", производство.Количество);
+                SqlParameter Date = new SqlParameter("@date", производство.Дата);
+                SqlParameter Emp = new SqlParameter("@emp", производство.Сотрудник);
+                var outParam = new SqlParameter
                 {
-                    if (rawM.Id == ingred.Сырье)
-                    {
-                        if (rawM.Количество < (ingred.Количество * производство.Количество))
-                        {
-                            isNotEnogh = true;
-                            break;
-                        }
-                    }
+                    ParameterName = "@r",
+                    DbType = System.Data.DbType.Int32,
+                    Size = 100,
+                    Direction = System.Data.ParameterDirection.Output
+                };
+
+                await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Production @product, @amount, @date, @emp, @r OUT", Product, Amount, Date, Emp, outParam);
+
+                if (outParam.SqlValue.ToString() == "0")
+                {
+                    ModelState.AddModelError("Количество", "Недостаточно Сырья!");
                 }
-            }
-
-            decimal averageSum, needSum, totalSum = 0;
-            decimal needAmount;
-
-            if (isNotEnogh)
-            {
-                ModelState.AddModelError("Количество", "Недостаточно материала для производства.");
-            }
-            else if (!isNotEnogh)
-            {
-                foreach (var rawM in rawMaterials)
+                else
                 {
-                    foreach (var ingred in ingredients)
-                    {
-                        if (rawM.Id == ingred.Сырье)
-                        {
-                            averageSum = Convert.ToDecimal(rawM.Сумма) / Convert.ToDecimal(rawM.Количество);
-                            needAmount = Convert.ToDecimal(ingred.Количество) * Convert.ToDecimal(производство.Количество);
-                            needSum = averageSum * Convert.ToDecimal(needAmount);
-
-                            var productAmountt = db.Сырьёs
-                                .Where(r => r.Id == ingred.Сырье)
-                                .FirstOrDefault();
-                            productAmountt.Количество = (short)(productAmountt.Количество - needAmount);
-                            productAmountt.Сумма = productAmountt.Сумма - needSum;
-
-                            totalSum += needSum;
-                        }
-
-                    }
+                    return RedirectToAction(nameof(Index));
                 }
 
-                var finProducts = db.ГотоваяПродукцияs
-                       .Where(r => r.Id == производство.Продукция)
-                       .FirstOrDefault();
-                finProducts.Количество += (short)производство.Количество;
-                finProducts.Сумма += totalSum;
-
-
-
-                _context.Add(производство);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
             }
             ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", производство.Продукция);
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", производство.Сотрудник);
@@ -172,7 +123,7 @@ namespace ToysDB.Controllers
         }
 
         // GET: Производство/Edit/5
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
             {
@@ -194,111 +145,40 @@ namespace ToysDB.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, [Bind("Id,Продукция,Количество,Дата,Сотрудник")] Производство производство)
+        public async Task<IActionResult> Edit(int? id, [Bind("Id,Продукция,Количество,Дата,Сотрудник")] Производство производство)
         {
-            var deleted = _context.Производствоs.Where(a => a.Id == производство.Id).FirstOrDefault();
-
-            List<Ингредиенты> ingredients = new List<Ингредиенты>();
-            List<Сырьё> rawMaterials = new List<Сырьё>();
-
-            ingredients = ((from col in _context.Ингредиентыs
-                            where col.Продукция == deleted.Продукция
-                            select col).ToList());
-
-            foreach (var item in ingredients)
+            SqlParameter Id = new SqlParameter("@id", производство.Id);
+            SqlParameter Product = new SqlParameter("@product", производство.Продукция);
+            SqlParameter Amount = new SqlParameter("@amount", производство.Количество);
+            SqlParameter Date = new SqlParameter("@date", производство.Дата);
+            SqlParameter Emp = new SqlParameter("@emp", производство.Сотрудник);
+            var outParam = new SqlParameter
             {
-                rawMaterials.Add((from ing in _context.Сырьёs
-                                  where ing.Id == item.Сырье
-                                  select ing).First());
-            }
+                ParameterName = "@r",
+                DbType = System.Data.DbType.Int32,
+                Size = 100,
+                Direction = System.Data.ParameterDirection.Output
+            };
+            var currentProduction = await _context.Производствоs.FromSqlRaw("dbo.GetID_Production @id", Id).ToListAsync();
+            SqlParameter crntAmount = new SqlParameter("@crntamount", currentProduction.FirstOrDefault().Количество);
 
-            decimal averageSum, needSum, totalSum = 0;
-            decimal needAmount;
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Production @id, @product, @amount, @date, @emp, @crntamount, @r OUT", Id, Product, Amount, Date, Emp, crntAmount, outParam);
 
-            foreach (var rawM in rawMaterials)
+            if (outParam.SqlValue.ToString() == "0")
             {
-                foreach (var ingred in ingredients)
-                {
-                    if (rawM.Id == ingred.Сырье)
-                    {
-                        averageSum = Convert.ToDecimal(rawM.Сумма) / Convert.ToDecimal(rawM.Количество);
-                        needAmount = Convert.ToDecimal(ingred.Количество) * Convert.ToDecimal(deleted.Количество);
-                        needSum = averageSum * Convert.ToDecimal(needAmount);
-
-                        var productAmountt = _context.Сырьёs
-                            .Where(r => r.Id == ingred.Сырье)
-                            .FirstOrDefault();
-                        productAmountt.Количество += (short)needAmount;
-                        productAmountt.Сумма += needSum;
-
-                        totalSum += needSum;
-                    }
-
-                }
+                ModelState.AddModelError("Количество", "Недостаточно Сырья!");
             }
-
-            List<Ингредиенты> ingredients1 = new List<Ингредиенты>();
-            List<Сырьё> rawMaterials1 = new List<Сырьё>();
-
-            ingredients1 = ((from col in _context.Ингредиентыs
-                             where col.Продукция == производство.Продукция
-                             select col).ToList());
-
-            foreach (var item in ingredients1)
+            else
             {
-                rawMaterials1.Add((from ing in _context.Сырьёs
-                                   where ing.Id == item.Сырье
-                                   select ing).First());
+                return RedirectToAction(nameof(Index));
             }
-
-            decimal averageSum1, needSum1, totalSum1 = 0;
-            decimal needAmount1;
-
-            foreach (var rawM in rawMaterials1)
-            {
-                foreach (var ingred in ingredients1)
-                {
-                    if (rawM.Id == ingred.Сырье)
-                    {
-                        averageSum1 = Convert.ToDecimal(rawM.Сумма) / Convert.ToDecimal(rawM.Количество);
-                        needAmount1 = Convert.ToDecimal(ingred.Количество) * Convert.ToDecimal(производство.Количество);
-                        needSum1 = averageSum1 * Convert.ToDecimal(needAmount1);
-
-                        var productAmountt1 = _context.Сырьёs
-                            .Where(r => r.Id == ingred.Сырье)
-                            .FirstOrDefault();
-                        productAmountt1.Количество -= (short)needAmount1;
-                        productAmountt1.Сумма -= needSum1;
-
-                        totalSum1 += needSum1;
-                    }
-
-                }
-            }
-
-            var prod = _context.ГотоваяПродукцияs.Where(u => u.Id == производство.Продукция).FirstOrDefault();
-            prod.Количество -= (short)deleted.Количество;
-            prod.Сумма -= totalSum;
-            prod.Количество += (short)производство.Количество;
-            prod.Сумма += totalSum1;
-
-
-            _context.Remove(deleted);
-            _context.Update(производство);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-
-
-
-
-
             ViewData["Продукция"] = new SelectList(_context.ГотоваяПродукцияs, "Id", "Наименование", производство.Продукция);
             ViewData["Сотрудник"] = new SelectList(_context.Сотрудникиs, "Id", "Фио", производство.Сотрудник);
             return View(производство);
         }
 
         // GET: Производство/Delete/5
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
             {
@@ -322,63 +202,12 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            var производство = await _context.Производствоs.FindAsync(id);
 
-
-            ToysContext db = new ToysContext();
-            List<Ингредиенты> ingredients = new List<Ингредиенты>();
-            List<Сырьё> rawMaterials = new List<Сырьё>();
-
-            ingredients = ((from col in _context.Ингредиентыs
-                            where col.Продукция == производство.Продукция
-                            select col).ToList());
-
-            foreach (var item in ingredients)
-            {
-                rawMaterials.Add((from ing in _context.Сырьёs
-                                  where ing.Id == item.Сырье
-                                  select ing).First());
-            }
-
-
-            decimal averageSum, needSum, totalSum = 0;
-            decimal needAmount;
-
-
-            foreach (var rawM in rawMaterials)
-            {
-                foreach (var ingred in ingredients)
-                {
-                    if (rawM.Id == ingred.Сырье)
-                    {
-                        averageSum = Convert.ToDecimal(rawM.Сумма) / Convert.ToDecimal(rawM.Количество);
-                        needAmount = Convert.ToDecimal(ingred.Количество) * Convert.ToDecimal(производство.Количество);
-                        needSum = averageSum * Convert.ToDecimal(needAmount);
-
-                        var productAmountt = db.Сырьёs
-                            .Where(r => r.Id == ingred.Сырье)
-                            .FirstOrDefault();
-                        productAmountt.Количество += (short)needAmount;
-                        productAmountt.Сумма += needSum;
-
-                        totalSum += needSum;
-                    }
-
-                }
-            }
-
-            var finProducts = db.ГотоваяПродукцияs
-                   .Where(r => r.Id == производство.Продукция)
-                   .FirstOrDefault();
-            finProducts.Количество -= (short)производство.Количество;
-            finProducts.Сумма -= totalSum;
-
-            _context.Производствоs.Remove(производство);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ПроизводствоExists(string id)
+        private bool ПроизводствоExists(int id)
         {
             return _context.Производствоs.Any(e => e.Id == id);
         }

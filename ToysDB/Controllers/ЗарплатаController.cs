@@ -95,51 +95,25 @@ namespace ToysDB.Controllers
             return View(SalaryList);
         }
 
-        // GET: Salaries/Details/5
-        public async Task<IActionResult> Details(short? id)
+        public async Task<IActionResult> PaySalary(string yearString, string monthString)
         {
-            if (id == null)
+            SqlParameter Year = new SqlParameter("@y", Convert.ToInt32(yearString));
+            SqlParameter Month = new SqlParameter("@m", Convert.ToInt32(monthString));
+            var outParam = new SqlParameter
             {
-                return NotFound();
-            }
-
-            var Зарплата = await _context.Зарплатаs
-                .Include(s => s.СотрудникиNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (Зарплата == null)
-            {
-                return NotFound();
-            }
-
-            return View(Зарплата);
-        }
-
-        public async Task<IActionResult> payЗарплата(string yearString, string monthString)
-        {
-            var parameterReturn = new SqlParameter
-            {
-                ParameterName = "p",
-                SqlDbType = System.Data.SqlDbType.Int,
-                Direction = System.Data.ParameterDirection.Output,
+                ParameterName = "@r",
+                DbType = System.Data.DbType.Int32,
+                Size = 100,
+                Direction = System.Data.ParameterDirection.Output
             };
 
-
-            SqlParameter year = new SqlParameter("@y", Convert.ToInt32(yearString));
-            SqlParameter month = new SqlParameter("@m", Convert.ToInt32(monthString));
-            _context.Database.ExecuteSqlRaw("exec  @p =  dbo.[SP_Pay_Зарплата]  @y,@m", year, month, parameterReturn);
-            int returnValue = (int)parameterReturn.Value;
-
-            if (returnValue == 1)
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.PaySalary @y, @m, @r out", Year, Month, outParam);
+            if (outParam.SqlValue.ToString() == "0")
             {
-                return NotFound("Don't have enough money in budget");
+                ModelState.AddModelError("", "Недостаточно бюджета!");
             }
-            else
-            {
-                await _context.SaveChangesAsync();
-                return RedirectToAction("Index", new { yearString, monthString });
-            }
+
+            return RedirectToAction(nameof(Index));
         }
-
-        
     }
 }    

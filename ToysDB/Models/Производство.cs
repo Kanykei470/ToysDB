@@ -7,7 +7,7 @@ namespace ToysDB.Models
 {
     public partial class Производство
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
         public byte? Продукция { get; set; }
         public short? Количество { get; set; }
         public DateTime Дата { get; set; }

@@ -98,7 +98,7 @@ namespace ToysDB.Controllers
         public async Task<IActionResult> Edit(byte? id)
         {
             SqlParameter Id = new SqlParameter("@Id", id);
-            var dataRawMaterial = await _context.Сырьёs.FromSqlRaw("dbo.selectByIdRawMaterial @Id", Id).ToListAsync();
+            var dataRawMaterial = await _context.Сырьёs.FromSqlRaw("dbo.GetID_Raw_Materials @Id", Id).ToListAsync();
 
             if (id == null)
             {
@@ -110,7 +110,7 @@ namespace ToysDB.Controllers
                 return NotFound();
             }
             ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Наименование", dataRawMaterial.FirstOrDefault().ЕдиницаИзмерения);
-            return View(dataRawMaterial);
+            return View(dataRawMaterial.FirstOrDefault());
         }
 
         // POST: Сырьё/Edit/5
@@ -129,8 +129,13 @@ namespace ToysDB.Controllers
             {
                 try
                 {
-                    _context.Update(сырьё);
-                    await _context.SaveChangesAsync();
+                    SqlParameter Id = new SqlParameter("@Id", сырьё.Id);
+                    SqlParameter Title = new SqlParameter("@Наименование", сырьё.Наименование);
+                    SqlParameter Unit = new SqlParameter("@Единица_измерения", сырьё.ЕдиницаИзмерения.);
+                    SqlParameter Sum = new SqlParameter("@Сумма", сырьё.Сумма);
+                    SqlParameter Amount = new SqlParameter("@Количество", сырьё.Количество);
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Update_Raw_Materials @Id, @Наименование,@Единица_измерения,@Сумма,@Количество", Id, Title,Unit,Sum,Amount);
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -143,18 +148,36 @@ namespace ToysDB.Controllers
                         throw;
                     }
                 }
+                catch (SqlException ex)
+                {
+                    return NotFound(ex.Message);
+                }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ЕдиницаИзмерения"] = new SelectList(_context.ЕдиницыИзмеренияs, "Id", "Id", сырьё.ЕдиницаИзмерения);
             return View(сырьё);
         }
 
         // GET: Сырьё/Delete/5
         public async Task<IActionResult> Delete(byte? id)
         {
-           //???
+            if (id == null)
+            {
+                return NotFound();
+            }
 
-            return View();
+            SqlParameter Id = new SqlParameter("@id", id);
+            var сырье = await _context.Сырьёs.FromSqlRaw("dbo.GetID_Raw_Materials @id", Id).ToListAsync();
+            SqlParameter IdUnit = new SqlParameter("@id", сырье.FirstOrDefault().ЕдиницаИзмерения);
+            var unit = await _context.ЕдиницыИзмеренияs.FromSqlRaw("dbo.GetID_Units @id", IdUnit).ToListAsync();
+
+            if (сырье.FirstOrDefault().ЕдиницаИзмерения == unit.FirstOrDefault().Id)
+                сырье.FirstOrDefault().ЕдиницаИзмеренияNavigation.Наименование = unit.FirstOrDefault().Наименование;
+            if (сырье == null)
+            {
+                return NotFound();
+            }
+
+            return View(сырье.FirstOrDefault());
         }
 
         // POST: Сырьё/Delete/5
@@ -162,9 +185,9 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(byte id)
         {
-            var сырьё = await _context.Сырьёs.FindAsync(id);
-            _context.Сырьёs.Remove(сырьё);
-            await _context.SaveChangesAsync();
+            SqlParameter Id = new SqlParameter("@id", id);
+            await _context.Database.ExecuteSqlRawAsync("exec dbo.Delete_Raw_Materials @id", Id);
+
             return RedirectToAction(nameof(Index));
         }
 

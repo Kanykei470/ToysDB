@@ -1,4 +1,4 @@
-﻿body.* {
+﻿body {
     background-color: #1A1A40 !important;
 }
 
@@ -6,9 +6,6 @@ header {
     background-color: #FFE400;
 }
 
-tbody {
-    background-color: #1A1A40;
-}
 
 h1 {
     color: #FFE162;

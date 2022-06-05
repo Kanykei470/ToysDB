@@ -57,13 +57,23 @@ namespace ToysDB.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Наименование")] ЕдиницыИзмерения единицыИзмерения)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(единицыИзмерения);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    SqlParameter Names = new SqlParameter("@Names", единицыИзмерения.Наименование);
+              
+
+                    await _context.Database.ExecuteSqlRawAsync("exec dbo.Insert_Units @Names", Names);
+
+                    return RedirectToAction(nameof(Index));
+                }
+                return View(единицыИзмерения);
             }
-            return View(единицыИзмерения);
+            catch (SqlException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // GET: ЕдиницыИзмерения/Edit/5

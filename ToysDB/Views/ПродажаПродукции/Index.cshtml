@@ -59,9 +59,7 @@
               <td>
                 @Html.DisplayFor(modelItem => item.Сумма)
             </td>
-           @* <td class="sum">
-               @((short)(item.ПродукцияNavigation.Сумма/(short)item.ПродукцияNavigation.Количество* (short)item.Количество))
-            </td>*@
+            
             <td>
                 @Html.Encode(string.Format("{0:dd/MM/yyyy}",item.Дата))
             </td>
